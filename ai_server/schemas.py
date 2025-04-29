@@ -12,6 +12,7 @@ class Emotion(str, Enum):
 
 class PostType(str, Enum):
     CAT = "고양이"
+    DOG = "강아지"
 
 class PostRequest(BaseModel):
     content: str = Field(..., description="변환할 원본 텍스트")
