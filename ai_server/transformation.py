@@ -4,8 +4,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 import google.generativeai as genai
-from schemas import Emotion, PostType
-from prompt_template import PromptGenerator
+from .schemas import Emotion, PostType
+from .prompt_template import PromptGenerator
 
 class TransformationService:
     def __init__(self, api_key: str):

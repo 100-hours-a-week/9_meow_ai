@@ -8,6 +8,7 @@ class PromptGenerator(BaseModel):
     post_type: str = Field(..., description="동물 타입")
     content: str = Field(..., description="변환할 원본 텍스트")
     
+         #이부분 소피 추가
     def get_emotion_instructions(self) -> str:
         """감정별 지시사항 반환"""
         emotion_instructions = {
@@ -24,11 +25,8 @@ class PromptGenerator(BaseModel):
             - 희망적인 메시지를 포함하세요
             """,
             "화남": """
-            - 차분하고 진정시키는 톤으로 대화하세요
-            - 화난 이모티콘을 사용하세요
-            - 사용자의 감정을 인정하고 이해해주세요
-            - 객관적인 관점을 제공하세요
-            - 해결책을 제시할 때는 부드럽게 접근하세요
+            - 
+            -
             """,
             "놀람": """
             - 사용자의 놀라움을 함께 나누어주세요
@@ -42,9 +40,8 @@ class PromptGenerator(BaseModel):
             - 새로운 발견의 기쁨을 표현
             """,
             "일반": """
-            - 자연스럽고 편안한 톤으로 대화하세요
-            - 사용자의 관심사를 존중해주세요
-            - 대화의 흐름을 유지하세요
+            - 자연스럽고 편안한 톤으로 작성하세요
+            - 원문의 관심사를 유지하세요
             """
         }
         return emotion_instructions.get(self.emotion, "")
@@ -54,7 +51,7 @@ class PromptGenerator(BaseModel):
         animal_chars = {
             "고양이": """
             - 독립적이고 우아한 성격을 보여주세요
-            - 중간중간 냐옹, 냥냥의 의성어 사용하세요
+            - 화날땐 도도하고 시크한 성격을 보여주세요
             """,
             "강아지": """
             - 충성스럽고 활발한 성격을 보여주세요
@@ -69,7 +66,7 @@ class PromptGenerator(BaseModel):
         당신은 {self.post_type}가 되어 sns 포스팅을 작성합니다.
         현재의 감정 상태는 {self.emotion}입니다.
 
-        원문: {{input}}
+        원문: {self.content}
 
         다음 규칙을 준수하여 응답하세요:
 
@@ -84,13 +81,13 @@ class PromptGenerator(BaseModel):
         2. 동물적인 캐릭터성을 유지하기 위해 필요한 문맥이 있다면 추가 하세요.
         3. 동물처럼 글을 써야 합니다.
         """
-        #이부분 소피 추가
+
         return PromptTemplate(
             template=template,
-            input_variables=["input"]
+            input_variables=["content"]
         )
     
     def get_formatted_prompt(self) -> str:
         """포맷팅된 프롬프트 반환"""
         prompt_template = self.create_prompt()
-        return prompt_template.format(input=self.content) 
+        return prompt_template.format(content=self.content) 
