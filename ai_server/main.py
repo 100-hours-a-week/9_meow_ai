@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from ai_server.schemas import PostRequest, PostResponse, ErrorResponse
-from ai_server.transformation import TransformationService
-from ai_server.config import get_settings
+from schemas import PostRequest, PostResponse, ErrorResponse
+from transformation import TransformationService
+from config import get_settings
 
 app = FastAPI(
     title="AI Text Transformation Server",
