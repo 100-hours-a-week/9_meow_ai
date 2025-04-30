@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+.DS_Store/
+
+# Virtual Environment
+.venv/
+install.sh
+
+# Environment variables
+.env
+
+# Logs
+*.log
