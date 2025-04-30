@@ -1,3 +1,4 @@
+```
 haebo/
 ├── .venv/                      # Python 가상환경
 ├── ai_server/                 # AI 서버 관련 로직 모듈
@@ -16,6 +17,8 @@ haebo/
 ├── install.sh                 # 초기 환경설정 스크립트
 ├── README.md                  # 프로젝트 설명
 └── requirements.txt           # Python 의존성 목록
+```
+
 
 ## API 키 풀링 (key_pool.py)
 > 목적: 
