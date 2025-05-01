@@ -147,7 +147,7 @@ root/
 
 ### 테스트
 ```bash
-PYTHONPATH=/path/to/haebo python3 test/key_pool_test.py
+python3 -m uvicorn ai_server.main:app --reload --port 8002
 ```
 
 ## 라이센스
