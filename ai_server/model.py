@@ -4,18 +4,21 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 import google.generativeai as genai
-from .schemas import Emotion, PostType
-from .prompt_template import PromptGenerator
+from ai_server.schemas import Emotion, PostType
+from ai_server.prompt import PromptGenerator
 
 class TransformationService:
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash-lite",
-            temperature=0.7,
+            model="gemini-2.0-flash",
+            temperature=0.5,
             convert_system_message_to_human=True,
             google_api_key=api_key  
         )
+        self._setup_chain()
+
+    def _setup_chain(self):
         # 기본 프롬프트 템플릿 설정
         self.prompt = PromptTemplate(
             template="{prompt}",
@@ -43,9 +46,9 @@ class TransformationService:
         try:
             # 프롬프트 생성기 초기화
             prompt_generator = PromptGenerator(
-                emotion=emotion.value,
-                post_type=post_type.value,
-                content=content
+                emotion=emotion.value,  # "일반", "행복" 등
+                post_type=post_type.value,  # "고양이", "강아지"
+                content=content  # 변환할 원본 텍스트
             )
             
             # 프롬프트 생성
@@ -59,4 +62,4 @@ class TransformationService:
             return result.strip()
             
         except Exception as e:
-            raise Exception(f"텍스트 변환 실패: {str(e)}") 
+            raise Exception(f"Failed to transform post: {str(e)}") 
