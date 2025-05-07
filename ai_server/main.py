@@ -1,9 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from ai_server.schemas import PostRequest, ErrorResponse
 from ai_server.model import TransformationService
 from ai_server.key_manager import initialize_key_pool
-from fastapi.responses import PlainTextResponse
 
 # API 키 풀 초기화
 key_pool = initialize_key_pool()
@@ -18,10 +18,10 @@ app = FastAPI(
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],  # 백엔드 서버 주소
+    allow_origins=["http://localhost:8080"],  # 프론트엔드 주소
     allow_credentials=True,
-    allow_methods=["POST", "GET"], # 필요한 HTTP 메서드만 허용
-    allow_headers=["*"]  # 필요한 헤더만 허용
+    allow_methods=["POST", "GET"],
+    allow_headers=["*"]
 )
 
 # 루트 엔드포인트
@@ -33,6 +33,7 @@ async def root():
 @app.post("/generate/post", response_class=PlainTextResponse, responses={400: {"model": ErrorResponse}})
 async def generate_post(request: PostRequest) -> str:
     try:
+        # 사용 가능한 API 키 획득
         api_key = await key_pool.get_available_key()
         if not api_key:
             raise HTTPException(
@@ -40,16 +41,14 @@ async def generate_post(request: PostRequest) -> str:
                 detail="현재 모든 API 키가 사용 중입니다. 잠시 후 다시 시도해주세요."
             )
 
-        try:
-            transformation_service = TransformationService(api_key=api_key)
-            transformed_content = await transformation_service.transform_post(
-                content=request.content,
-                emotion=request.emotion,
-                post_type=request.post_type
-            )
-            return transformed_content
-        finally:
-            await key_pool.release_key(api_key)
+        # 텍스트 변환 서비스 실행
+        transformation_service = TransformationService(api_key=api_key)
+        transformed_content = await transformation_service.transform_post(
+            content=request.content,
+            emotion=request.emotion,
+            post_type=request.post_type
+        )
+        return transformed_content
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
