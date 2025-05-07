@@ -109,15 +109,17 @@ python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --proxy-headers
 ```
 9_meow_ai/
 ├── ai_server/                    # 메인 서버 코드
-│   ├── __init__.py             # 패키지 초기화
-│   ├── main.py                 # FastAPI 메인 애플리케이션
-│   ├── config.py               # 환경 설정 및 구성
-│   ├── schemas.py              # Pydantic 데이터 모델
-│   ├── model.py                # 텍스트 변환 서비스
-│   ├── prompt.py               # 프롬프트 생성 및 관리
-│   └── key_manager.py         # API 키 관리 및 풀링
-├── requirements.txt            # 의존성 목록
-└── README.md                   # 프로젝트 문서
+│   ├── __init__.py              # 패키지 초기화
+│   ├── main.py                  # FastAPI 메인 애플리케이션
+│   ├── config.py                # 환경 설정 및 구성
+│   ├── schemas.py               # Pydantic 데이터 모델
+│   ├── model.py                 # 텍스트 변환 서비스
+│   ├── prompt.py                # 프롬프트 생성 및 관리
+│   └── key_manager.py           # API 키 관리 및 풀링
+├── requirements.txt             # 의존성 목록
+├── install.sh                   # 설치 및 초기 설정 스크립트
+├── .env                         # 환경 변수 파일 (API 키 등)
+└── README.md                    # 프로젝트 문서
 ```
 
 ## 성능 최적화
