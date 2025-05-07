@@ -11,12 +11,20 @@ SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하는 AI API
 
 ## 기술 스택
 
-- Python 3.8+
-- FastAPI
-- LangChain
-- Google Generative AI (Gemini)
-- Pydantic
-- asyncio
+- Python 3.12.9
+- FastAPI 0.109.2
+- Uvicorn 0.27.1
+- LangChain 0.1.9
+- Google Generative AI 0.4.1
+- Google AI Generative Language 0.4.0
+- LangChain Google GenAI 0.0.11
+- LangChain Core 0.1.53
+- LangChain Community 0.0.38
+- Pydantic 2.11.4
+- Python-dotenv 1.0.1
+- Jinja2 3.1.3
+- SQLAlchemy 2.0.40
+- Starlette 0.36.3
 
 ## 설치 방법
 
@@ -50,6 +58,8 @@ GOOGLE_API_KEYS_list=["key1", "key2", "key3"]   # 여러 개의 API 키를 리�
 
 1. PYTHONPATH 설정
 ```bash
+# 현재 디렉토리를 Python 모듈 검색 경로에 추가
+# 이는 ai_server 패키지를 Python이 찾을 수 있게 하기 위함입니다
 export PYTHONPATH=$PWD:$PYTHONPATH
 ```
 
@@ -78,17 +88,14 @@ python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --proxy-headers
 ```
 
 **응답:**
-```json
-{
-    "fixed_content": "변환된 텍스트"
-}
+```str
+변환된 텍스트
 ```
 
 **에러 응답:**
 ```json
 {
-    "error": "에러 메시지",
-    "detail": "상세 에러 정보"
+    "detail": "에러 메시지"
 }
 ```
 
