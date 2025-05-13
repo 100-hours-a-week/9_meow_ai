@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal, Any
+from typing import Optional
 from enum import Enum
-from fastapi.responses import PlainTextResponse
 
 class Emotion(str, Enum):
     NORMAL = "normal"
