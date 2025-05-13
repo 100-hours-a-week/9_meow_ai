@@ -1,5 +1,5 @@
-from typing import Dict, List, Optional, ClassVar
-from pydantic import BaseModel, Field, RootModel
+from typing import Dict, ClassVar
+from pydantic import BaseModel, Field
 from langchain.prompts import PromptTemplate
 
 class PromptGenerator(BaseModel):
