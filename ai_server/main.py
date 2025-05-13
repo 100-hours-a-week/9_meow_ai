@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
-from ai_server.schemas import PostRequest, ErrorResponse
+from ai_server.schemas import PostRequest, ErrorResponse, CommentRequest
 from ai_server.model import TransformationService
 from ai_server.key_manager import initialize_key_pool
 
@@ -50,7 +50,30 @@ async def generate_post(request: PostRequest) -> str:
         )
         return transformed_content
 
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# 댓글 변환 엔드포인트
+@app.post("/generate/comment", response_class=PlainTextResponse, responses={400: {"model": ErrorResponse}})
+async def generate_comment(request: CommentRequest) -> str:
+    try:
+        # 사용 가능한 API 키 획득
+        api_key = await key_pool.get_available_key()
+        if not api_key:
+            raise HTTPException(
+                status_code=503,
+                detail="현재 모든 API 키가 사용 중입니다. 잠시 후 다시 시도해주세요."
+            )
+
+        # 텍스트 변환 서비스 실행
+        transformation_service = TransformationService(api_key=api_key)
+        transformed_content = await transformation_service.transform_comment(
+            text=request.text,
+            post_type=request.post_type
+        )
+        
+        # 결과 반환
+        return transformed_content
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
