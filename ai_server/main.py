@@ -30,15 +30,22 @@ async def root():
     return {"message": "AI Text Transformation Server is running"}
 
 # 텍스트 변환 엔드포인트
-@app.post("/generate/post", response_class=PlainTextResponse, responses={400: {"model": ErrorResponse}})
+@app.post("/generate/post", 
+    response_class=PlainTextResponse,
+    responses={
+        200: {"description": "Successfully transformed text"},
+        400: {"model": ErrorResponse},
+        503: {"description": "Service temporarily unavailable"}
+    }
+)
 async def generate_post(request: PostRequest) -> str:
     try:
         # 사용 가능한 API 키 획득
         api_key = await key_pool.get_available_key()
         if not api_key:
-            raise HTTPException(
-                status_code=503,
-                detail="현재 모든 API 키가 사용 중입니다. 잠시 후 다시 시도해주세요."
+            return PlainTextResponse(
+                content="Rate limit exceeded. Please try again later.",
+                status_code=503
             )
 
         # 텍스트 변환 서비스 실행

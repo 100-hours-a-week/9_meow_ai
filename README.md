@@ -50,9 +50,15 @@ pip install -r requirements.txt
 4. 환경 변수 설정
 `.env` 파일을 생성하고 다음 내용을 추가합니다:
 ```
-GOOGLE_API_KEYS=["key1"]   # 한 개의 API 키를 리스트로 설정
-GOOGLE_API_KEYS_list=["key1", "key2", "key3"]   # 여러 개의 API 키를 리스트로 설정
+# API 키 설정 (공백 없이 정확한 형식으로 입력)
+GOOGLE_API_KEYS=["key1","key2","key3"]   # 여러 키 사용 시
+# 또는
+GOOGLE_API_KEYS=["key1"]   # 단일 키 사용 시
 ```
+
+주의: 환경 변수 값은 공백 없이 정확한 형식으로 입력해야 합니다.
+- 올바른 형식: `GOOGLE_API_KEYS=["key1","key2","key3"]`
+- 잘못된 형식: `GOOGLE_API_KEYS = ["key1", "key2", "key3"]`
 
 ## 실행 방법
 
@@ -65,7 +71,7 @@ export PYTHONPATH=$PWD:$PYTHONPATH
 
 2. 서버 실행
 ```bash
-python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --proxy-headers --reload
+python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --proxy-headers
 ```
 
 3. API 문서 확인
@@ -117,7 +123,6 @@ python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --proxy-headers
 │   ├── prompt.py                # 프롬프트 생성 및 관리
 │   └── key_manager.py           # API 키 관리 및 풀링
 ├── requirements.txt             # 의존성 목록
-├── install.sh                   # 설치 및 초기 설정 스크립트
 ├── .env                         # 환경 변수 파일 (API 키 등)
 └── README.md                    # 프로젝트 문서
 ```
@@ -127,15 +132,55 @@ python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --proxy-headers
 ### API 키 관리 (key_manager.py)
 - 여러 API 키를 효율적으로 관리하여 처리량 향상
 - 분당 요청 제한 관리
-- 키 사용량 기반 자동 순환
+
+## 파일별 코드 설명
+
+### ai_server/main.py
+FastAPI 기반의 메인 애플리케이션 파일입니다. 주요 기능:
+- FastAPI 앱 초기화 및 CORS 설정
+- API 키 풀 초기화
+- 루트 엔드포인트 (`/`) 구현
+- 텍스트 변환 엔드포인트 (`/generate/post`) 구현
+- 에러 처리 및 HTTP 예외 처리
+
+### ai_server/schemas.py
+Pydantic 모델을 정의하는 파일입니다. 주요 기능:
+- `Emotion` Enum: 감정 상태 정의 (일반, 행복, 호기심, 슬픔, 놀람, 화남)
+- `PostType` Enum: 동물 타입 정의 (고양이, 강아지)
+- `PostRequest`: API 요청 데이터 모델
+- `ErrorResponse`: API 에러 응답 모델
+
+### ai_server/model.py
+텍스트 변환 서비스의 핵심 로직을 구현한 파일입니다. 주요 기능:
+- `TransformationService` 클래스: Google Gemini AI를 사용한 텍스트 변환
+- LangChain과 Google Generative AI 통합
+- 비동기 텍스트 변환 처리
+- 프롬프트 생성 및 LLM 호출
+
+### ai_server/key_manager.py
+API 키 관리를 담당하는 파일입니다. 주요 기능:
+- `APIKeyPool` 클래스: API 키 풀링 구현
 - 비동기 락을 통한 동시성 제어
-- API 키 풀 초기화 및 관리
-- 키 사용 가능 여부 확인 및 할당
-- 키 사용 완료 후 반환
+- 환경 변수에서 API 키 로드
+- 키 순환 및 할당 관리
 
-## 개발 가이드
+### ai_server/config.py
+애플리케이션 설정을 관리하는 파일입니다. 주요 기능:
+- `Settings` 클래스: 환경 변수 기반 설정 관리
+- 캐시 설정, 배치 크기, 대기 시간 등 구성
+- LRU 캐시를 통한 설정 인스턴스 관리
 
-### 코드 컨벤션
-- Black 코드 포맷터 사용
-- Pylint 린터 사용
-- 타입 힌트 사용
+### ai_server/prompt.py
+프롬프트 생성 및 관리를 담당하는 파일입니다. 주요 기능:
+- `PromptGenerator` 클래스: 동물별, 감정별 프롬프트 템플릿 관리
+- 고양이/강아지별 기본 프롬프트 정의
+- 감정별 스타일 가이드 정의
+- 프롬프트 템플릿 생성 및 포맷팅
+
+### requirements.txt
+프로젝트 의존성 패키지 목록을 관리하는 파일입니다.
+
+### .env
+환경 변수 설정 파일입니다. 주요 설정:
+- `GOOGLE_API_KEYS`: API 키 리스트 (단일 키는 ["key1"], 여러 키는 ["key1", "key2", "key3"] 형태)
+- 기타 환경 변수 설정
