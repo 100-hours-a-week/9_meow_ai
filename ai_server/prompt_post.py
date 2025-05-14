@@ -2,8 +2,8 @@ from typing import Dict, ClassVar
 from pydantic import BaseModel, Field
 from langchain.prompts import PromptTemplate
 
-class PromptGenerator(BaseModel):
-    """프롬프트 생성기 클래스"""
+class PostPromptGenerator(BaseModel):
+    """포스트용 프롬프트 생성기 클래스"""
     emotion: str = Field(..., description="감정 상태")
     post_type: str = Field(..., description="동물 타입")
     content: str = Field(..., description="변환할 원본 텍스트")
@@ -83,4 +83,4 @@ class PromptGenerator(BaseModel):
     def get_formatted_prompt(self) -> str:
         """포맷팅된 프롬프트 반환"""
         prompt_template = self.create_prompt()
-        return prompt_template.format(content=self.content)
+        return prompt_template.format(content=self.content) 
