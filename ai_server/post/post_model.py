@@ -1,7 +1,7 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 import google.generativeai as genai
-from ai_server.schemas import Emotion, PostType
-from ai_server.post_prompt import PostPromptGenerator
+from ai_server.post.post_schemas import Emotion, PostType
+from ai_server.post.post_prompt import PostPromptGenerator
 
 #post 변환 서비스(제이마니 플래시 모델 사용)
 class PostTransformationService:

@@ -9,10 +9,6 @@ class Settings(BaseSettings):
     """
     # API 키 설정
     GOOGLE_API_KEYS: List[str]  # Google API 키 목록
-    
-    # 배치 처리 설정
-    MAX_BATCH_SIZE: int = 10  # 최대 배치 크기
-    MAX_WAIT_TIME: float = 2.0  # 최대 대기 시간 (초)
 
     class Config:
         env_file = ".env"

@@ -9,7 +9,7 @@ class APIKeyPool:
     여러 API 키를 순환하며 사용하여 처리량을 최적화하고,
     비동기 락을 통해 동시성 문제(동시에 요청이 오는 경우)를 해결합니다.
     """
-    def __init__(self, api_keys: List[str], max_requests_per_min: int = 1):
+    def __init__(self, api_keys: List[str], max_requests_per_min: int = 15):
         self.api_keys = api_keys  # 사용 가능한 API 키 목록
         self.current_index = 0    # 현재 사용 중인 키의 인덱스
         self.lock = asyncio.Lock()  # 비동기 동시성 제어를 위한 락

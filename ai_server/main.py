@@ -1,10 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
-from ai_server.schemas import PostRequest, ErrorResponse, CommentRequest
 from ai_server.key_manager import initialize_key_pool
-from ai_server.post_model import PostTransformationService
-from ai_server.comment_model import CommentTransformationService
+from ai_server.post.post_model import PostTransformationService
+from ai_server.post.post_schemas import PostRequest, ErrorResponse
+from ai_server.comment.comment_model import CommentTransformationService
+from ai_server.comment.comment_schemas import ErrorResponse, CommentRequest
 
 
 # API 키 풀 초기화
@@ -61,16 +62,6 @@ async def generate_post(request: PostRequest) -> str:
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-# 댓글 변환 엔드포인트
-@app.post("/generate/comment", 
-    response_class=PlainTextResponse,
-    responses={
-        200: {"description": "Successfully transformed text"},
-        400: {"model": ErrorResponse},
-        503: {"description": "Service temporarily unavailable"}
-    }
-)
 
 # 댓글 변환 엔드포인트
 @app.post("/generate/comment", 
