@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 .DS_Store
+.vscode/
 
 # Virtual Environment
 .venv/
@@ -8,6 +9,9 @@ install.sh
 
 # Environment variables
 .env
+env
+lib/
+lib64/
 
 # Logs
 *.log
