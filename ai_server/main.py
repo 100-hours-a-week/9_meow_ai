@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from ai_server.key_manager import initialize_key_pool
 from ai_server.post.post_model import PostTransformationService
-from ai_server.post.post_schemas import PostRequest, ErrorResponse
+from ai_server.post.post_schemas import PostRequest
 from ai_server.comment.comment_model import CommentTransformationService
-from ai_server.comment.comment_schemas import ErrorResponse, CommentRequest
+from ai_server.comment.comment_schemas import CommentRequest
 
 
 # API 키 풀 초기화
@@ -37,8 +37,8 @@ async def root():
     response_class=PlainTextResponse,
     responses={
         200: {"description": "Successfully transformed text"},
-        400: {"model": ErrorResponse},
-        503: {"description": "Service temporarily unavailable"}
+        500: {"description": "Internal server error"},
+        503: {"description": "API key is not available"}
     }
 )
 async def generate_post(request: PostRequest) -> str:
@@ -68,8 +68,8 @@ async def generate_post(request: PostRequest) -> str:
     response_class=PlainTextResponse,
     responses={
         200: {"description": "Successfully transformed text"},
-        400: {"model": ErrorResponse},
-        503: {"description": "Service temporarily unavailable"}
+        500: {"description": "Internal server error"},
+        503: {"description": "API key is not available"}
     }
 )
 async def generate_comment(request: CommentRequest) -> str:

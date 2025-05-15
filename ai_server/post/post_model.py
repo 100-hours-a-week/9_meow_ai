@@ -9,7 +9,7 @@ class PostTransformationService:
         genai.configure(api_key=api_key)
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash",
-            temperature=0.5,
+            temperature=0.3,
             convert_system_message_to_human=True,
             google_api_key=api_key
         )

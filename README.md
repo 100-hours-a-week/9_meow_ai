@@ -114,17 +114,24 @@ python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --proxy-headers
 
 ```
 9_meow_ai/
-├── ai_server/                    # 메인 서버 코드
-│   ├── __init__.py              # 패키지 초기화
-│   ├── main.py                  # FastAPI 메인 애플리케이션
-│   ├── config.py                # 환경 설정 및 구성
-│   ├── schemas.py               # Pydantic 데이터 모델
-│   ├── model.py                 # 텍스트 변환 서비스
-│   ├── prompt.py                # 프롬프트 생성 및 관리
-│   └── key_manager.py           # API 키 관리 및 풀링
-├── requirements.txt             # 의존성 목록
-├── .env                         # 환경 변수 파일 (API 키 등)
-└── README.md                    # 프로젝트 문서
+├── .github/                    # GitHub 관련 설정
+├── .venv/                      # Python 가상환경
+├── ai_server/                  # 메인 서버 코드
+│   ├── __init__.py            # 패키지 초기화 파일
+│   ├── config.py              # 환경 설정 관리
+│   ├── key_manager.py         # API 키 풀 관리
+│   ├── main.py                # FastAPI 메인 애플리케이션
+│   ├── comment/               # 댓글 변환 관련 모듈
+│   │   ├── comment_model.py   # 댓글 변환 서비스
+│   │   ├── comment_prompt.py  # 댓글 프롬프트 생성기
+│   │   └── comment_schemas.py # 댓글 관련 스키마
+│   └── post/                  # 포스트 변환 관련 모듈
+│       ├── post_model.py      # 포스트 변환 서비스
+│       ├── post_prompt.py     # 포스트 프롬프트 생성기
+│       └── post_schemas.py    # 포스트 관련 스키마
+├── .gitignore                 # Git 무시 파일 목록
+├── README.md                  # 프로젝트 문서
+└── requirements.txt           # Python 패키지 의존성
 ```
 
 ## 성능 최적화
