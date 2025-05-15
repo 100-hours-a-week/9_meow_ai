@@ -1,7 +1,7 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 import google.generativeai as genai
-from ai_server.comment_prompt import CommentPromptGenerator
-from ai_server.schemas import CommentType
+from ai_server.comment.comment_prompt import CommentPromptGenerator
+from ai_server.comment.comment_schemas import CommentType
 
 class CommentTransformationService:
     def __init__(self, api_key: str):
