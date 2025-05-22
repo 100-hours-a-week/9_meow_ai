@@ -74,7 +74,7 @@ jobs:
 
   deploy:
     name: 🚀 Deploy AI Server
-    needs: integration
+    needs:  build-and-test
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push'
