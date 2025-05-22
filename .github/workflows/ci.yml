@@ -74,12 +74,12 @@ jobs:
 
   deploy:
     name: 🚀 Deploy AI Server
-    needs:  build-and-test
     runs-on: ubuntu-latest
     if: |
-      github.event_name == 'push'
-      && !contains(github.event.head_commit.message, '[skip cd]')
+      !contains(github.event.head_commit.message, '[skip cd]')
       && !contains(github.event.head_commit.message, '[cd skip]')
+      &&  github.event_name == 'push' 
+      && github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v3
 
