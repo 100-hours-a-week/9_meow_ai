@@ -2,7 +2,6 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from pydantic import ValidationError
 from ai_server.key_manager import initialize_key_pool
 from ai_server.post.post_model import PostTransformationService
 from ai_server.post.post_schemas import PostRequest, PostResponse
@@ -24,7 +23,7 @@ app = FastAPI(
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],  # 프론트엔드 주소
+    allow_origins=["http://localhost:8080"],  # 백엔드 주소
     allow_credentials=True,
     allow_methods=["POST", "GET"],
     allow_headers=["*"]
