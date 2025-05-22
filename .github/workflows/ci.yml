@@ -1,31 +1,27 @@
-name: LLM API CI
+name: LLM API CI & CD
 
 on:
   push:
     branches:
       - develop
-      - release
+      - 'release/**'
+      - main
   pull_request:
     branches:
       - develop
-      - release
+      - 'release/**'
       - main
-
 
 jobs:
   build-and-test:
+    name: 🤖 Build & Lint
+    runs-on: ubuntu-latest
     if: >
       !contains(github.event.head_commit.message, '[skip ci]')
       && !contains(github.event.head_commit.message, '[ci skip]')
-      && (
-        ( github.event_name == 'pull_request'
-             && github.base_ref == 'develop'
-             && contains(github.head_ref, 'feat')
-        )
-      )
-    name: 🤖 Build & Lint
-    runs-on: ubuntu-latest
-
+      && github.event_name == 'pull_request'
+      && github.base_ref == 'develop'
+      && contains(github.head_ref, 'feat')
     steps:
       - uses: actions/checkout@v3
 
@@ -46,17 +42,12 @@ jobs:
     name: 🔗 AI Server Integration Tests
     runs-on: ubuntu-latest
     needs: build-and-test
-    # skip-ci / ci skip 메시지가 있으면 이 Job 전체를 건너뜁니다.
-    # PR: release ← develop, main ← release/*, main ← hotfix/*, main ← develop
     if: >
       !contains(github.event.head_commit.message, '[skip ci]')
       && !contains(github.event.head_commit.message, '[ci skip]')
-      && (
-        ( github.event_name == 'pull_request'
-          && github.base_ref == 'release'
-          && github.head_ref == 'develop'
-        )
-      )
+      && github.event_name == 'pull_request'
+      && contains(github.base_ref, 'release')
+      && github.head_ref == 'develop'
     steps:
       - uses: actions/checkout@v3
 
@@ -76,10 +67,50 @@ jobs:
       - name: Wait for Health (root)
         run: |
           for i in {1..10}; do
-            if curl -s http://localhost:8000/; then
-              echo "✅ AI Server (/) is up"
-              exit 0
-            fi
+            curl -sf http://localhost:8000/ && exit 0
             sleep 5
           done
           exit 1
+
+  deploy:
+    name: 🚀 Deploy AI Server
+    needs: integration
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push'
+      && !contains(github.event.head_commit.message, '[skip cd]')
+      && !contains(github.event.head_commit.message, '[cd skip]')
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID_FOR_ACTIONS }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_FOR_ACTIONS }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Determine ECR Namespace
+        id: ns
+        run: |
+          BRANCH=${GITHUB_REF#refs/heads/}
+          if [[ "$BRANCH" == "develop" ]]; then
+            echo "ENV=dev" >> $GITHUB_ENV
+          elif [[ "$BRANCH" =~ ^release/ ]]; then
+            echo "ENV=release" >> $GITHUB_ENV
+          elif [[ "$BRANCH" == "main" ]]; then
+            echo "ENV=prod" >> $GITHUB_ENV
+          else
+            echo "ENV=skip" >> $GITHUB_ENV
+          fi
+
+      - name: Build, Tag & Push to ECR
+        if: env.ENV != 'skip'
+        run: |
+          SERVICE=9_meow_ai
+          IMAGE_URI=${{ secrets.ECR_REGISTRY }}/${ENV}/${SERVICE}
+          docker build --platform linux/amd64 -t $IMAGE_URI:latest .
+          docker push $IMAGE_URI:latest
