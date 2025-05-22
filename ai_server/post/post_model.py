@@ -3,7 +3,7 @@ import google.generativeai as genai
 from ai_server.post.post_schemas import Emotion, PostType
 from ai_server.post.post_prompt import PostPromptGenerator
 
-#post 변환 서비스(제이마니 플래시 모델 사용)
+#post 변환 서비스(제미나이 플래시 모델 사용)
 class PostTransformationService:
     def __init__(self, api_key: str):
         genai.configure(api_key=api_key)
