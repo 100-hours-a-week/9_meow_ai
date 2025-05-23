@@ -18,10 +18,11 @@ WORKDIR /app
 # 빌드 스테이지에서 설치된 패키지 가져오기
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 # 앱 코드 복사
+COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app/ai_server ai_server
 
 # FastAPI 기본 포트
 EXPOSE 8000
 
 # 컨테이너 시작 시 Uvicorn 실행
-CMD ["uvicorn", "ai_server.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python3", "-m", "uvicorn", "ai_server.main:app", "--host", "0.0.0.0", "--port", "8000"]
