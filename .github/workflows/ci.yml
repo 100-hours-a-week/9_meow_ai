@@ -123,7 +123,5 @@ jobs:
       - name: Deploy to EC2 via SSH
         if: env.ENV != 'skip'
         run: |
-          ssh -o StrictHostKeyChecking=no \
-              ubuntu@${{ secrets.SERVER_HOST }} \
-              "/home/ubuntu/meow/deployment/update.sh"
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.SERVER_HOST }} "/home/ubuntu/meow/deployment/update.sh"
 
