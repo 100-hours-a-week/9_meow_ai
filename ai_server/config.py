@@ -1,5 +1,6 @@
 from typing import List
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 from functools import lru_cache
 
 class Settings(BaseSettings):
@@ -10,9 +11,10 @@ class Settings(BaseSettings):
     # API 키 설정
     GOOGLE_API_KEYS: List[str]  # Google API 키 목록
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8"
+    )
 
 @lru_cache()
 def get_settings() -> Settings:
