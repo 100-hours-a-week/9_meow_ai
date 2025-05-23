@@ -116,7 +116,7 @@ jobs:
           docker push $IMAGE_URI:latest
       - name: Start SSH Agent
         if: env.ENV != 'skip'
-        uses: webfactory/ssh-agent@v0.8.1
+        uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
 
