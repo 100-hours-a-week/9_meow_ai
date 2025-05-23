@@ -119,9 +119,7 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
-
+      
       - name: Deploy to EC2 via SSH
         if: env.ENV != 'skip'
-        run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.SERVER_HOST }} "/home/ubuntu/meow/deployment/update.sh"
-
+        run: ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.SERVER_HOST }} "/home/ubuntu/meow/deployment/update.sh"
