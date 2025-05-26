@@ -5,7 +5,7 @@ FROM python:3.11-slim AS builder
 WORKDIR /app
 
 # 의존성 설치
-COPY requirements.txt .
+COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # 앱 코드 전체 복사
