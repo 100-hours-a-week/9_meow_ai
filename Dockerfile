@@ -21,6 +21,9 @@ COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app/ai_server ai_server
 
+# env 파일 복사
+COPY --from=builder /app/.env .env
+
 # FastAPI 기본 포트
 EXPOSE 8000
 
