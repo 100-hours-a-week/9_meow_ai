@@ -11,3 +11,8 @@ langchain-core==0.1.53
 langchain-community==0.0.38
 pydantic-core>=2.0.0
 pyflakes
+
+# 허깅페이스 모델 의존성
+transformers>=4.51.3
+torch>=2.6.0
+accelerate>=0.20.0

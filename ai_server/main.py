@@ -89,8 +89,7 @@ async def root():
         200: {"model": PostResponse, "description": "Successfully transformed text"},
         400: {"model": PostResponse, "description": "Empty Input"},
         422: {"model": PostResponse, "description": "wrong post_type or emotion"},
-        500: {"model": PostResponse, "description": "internal_server_error"},
-        503: {"model": PostResponse, "description": "API key is not available"}
+        500: {"model": PostResponse, "description": "internal_server_error"}
     }
 )
 async def generate_post(request: PostRequest):
@@ -98,14 +97,9 @@ async def generate_post(request: PostRequest):
     if not request.content.strip():
         raise HTTPException(status_code=400, detail="Empty Input")
 
-    # 사용 가능한 API 키 획득
-    api_key = await key_pool.get_available_key()
-    if not api_key:
-        raise HTTPException(status_code=503, detail="API key is not available")
-
     try:
         # 스키마에서 정의된 타입을 사용하여 포스트 변환 서비스 실행
-        post_service = PostTransformationService(api_key=api_key)
+        post_service = PostTransformationService()  # 기본 모델 사용
         transformed_content = await post_service.transform_post(
             content=request.content,
             emotion=request.emotion,
