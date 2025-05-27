@@ -18,3 +18,4 @@ lib64/
 
 # Test code
 test/
+.pytest_cache

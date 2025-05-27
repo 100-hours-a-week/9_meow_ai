@@ -191,3 +191,32 @@ API 키 관리를 담당하는 파일입니다. 주요 기능:
 환경 변수 설정 파일입니다. 주요 설정:
 - `GOOGLE_API_KEYS`: API 키 리스트 (단일 키는 ["key1"], 여러 키는 ["key1", "key2", "key3"] 형태)
 - 기타 환경 변수 설정
+
+## CI/CD yaml 
+```
+name: Python application
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run tests
+      run: |
+        pytest --cache-clear
+```

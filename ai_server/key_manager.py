@@ -69,6 +69,6 @@ def initialize_key_pool() -> APIKeyPool:
     print(f"Loaded Keys: {len(api_keys)}")
     
     if not api_keys:
-        print("Error: GOOGLE_API_KEYS가 비어있습니다.")
+        raise ValueError("Error: GOOGLE_API_KEYS가 비어있습니다.")
     
     return APIKeyPool(api_keys=api_keys)
