@@ -5,7 +5,7 @@
 import os
 import logging
 import threading
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 from ai_server.models.huggingface_model import PostModel
 from ai_server.config import get_settings
@@ -56,6 +56,7 @@ class ModelManager:
                 if should_preload:
                     # Post 모델 미리 로드
                     if "post" not in self._models:
+                        # 모델 인스턴스 생성 - 파라미터 없이 설정 파일 값만 사용
                         self._models["post"] = PostModel()
                         logger.info("Post 모델 사전 로드 완료")
             except Exception as e:
@@ -73,6 +74,7 @@ class ModelManager:
             if "post" not in self._models:
                 logger.info("Post 모델 로드 시작")
                 try:
+                    # 모델 인스턴스 생성 - 파라미터 없이 설정 파일 값만 사용
                     self._models["post"] = PostModel()
                     logger.info("Post 모델 로드 완료")
                 except Exception as e:
@@ -103,4 +105,4 @@ def get_model_manager() -> ModelManager:
     Returns:
         ModelManager 인스턴스
     """
-    return ModelManager() 
+    return ModelManager()

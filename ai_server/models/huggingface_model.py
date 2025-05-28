@@ -16,40 +16,19 @@ class PostModel:
     """
     파인튜닝된 Meow-HyperCLOVAX 모델을 로드하고 관리하는 클래스
     """
-    def __init__(
-        self, 
-        model_path: str = None, 
-        device: str = None,
-        use_auth_token: bool = False,
-        max_new_tokens: int = None,
-        temperature: float = None,
-        top_p: float = None,
-        **kwargs
-    ):
+    # 클래스 변수로 settings를 한 번만 로드 (모든 인스턴스가 공유)
+    settings = get_settings()
+    
+    def __init__(self):
         """
-        모델 초기화
-        
-        Args:
-            model_path: 모델 경로 또는 이름 (기본값: 설정에서 가져옴)
-            device: 모델 실행 디바이스 (기본값: 자동 감지)
-            use_auth_token: 허깅페이스 토큰 사용 여부
-            max_new_tokens: 최대 생성 토큰 수 (기본값: 설정에서 가져옴)
-            temperature: 생성 온도 (기본값: 설정에서 가져옴)
-            top_p: 누적 확률 임계값 (기본값: 설정에서 가져옴)
-            **kwargs: 추가 파라미터
+        모델 초기화 - 설정 파일의 값만 사용
         """
-        # 설정 로드
-        settings = get_settings()
-            
-        # 설정에서 값 로드
-        self.model_path = model_path or settings.HUGGINGFACE_MODEL_PATH
-        self.auth_token = settings.HUGGINGFACE_TOKEN if use_auth_token else None
+        # 설정 파일에서 값 가져오기
+        self.model_path = self.settings.HUGGINGFACE_MODEL_PATH
+        self.auth_token = self.settings.HUGGINGFACE_TOKEN
         
         # 디바이스 설정 (자동 감지)
-        if device is not None:
-            # 사용자가 명시적으로 지정한 경우
-            self.device = device
-        elif torch.cuda.is_available():
+        if torch.cuda.is_available():
             # GPU 사용 가능
             self.device = "cuda"
             logger.info("CUDA GPU를 사용합니다.")
@@ -65,7 +44,7 @@ class PostModel:
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_path,
                 token=self.auth_token,
-                model_max_length=settings.MODEL_MAX_LENGTH
+                model_max_length=self.settings.MODEL_MAX_LENGTH
             )
             
             # 모델 로드
@@ -93,10 +72,10 @@ class PostModel:
                 device=device_id
             )
             
-            # 생성 설정 - max_length 대신 max_new_tokens 사용
-            self.max_new_tokens = max_new_tokens or settings.MODEL_MAX_NEW_TOKENS
-            self.temperature = temperature or settings.MODEL_TEMPERATURE
-            self.top_p = top_p or settings.MODEL_TOP_P
+            # 생성 설정 저장 (설정 파일 값 사용)
+            self.max_new_tokens = self.settings.MODEL_MAX_NEW_TOKENS
+            self.temperature = self.settings.MODEL_TEMPERATURE
+            self.top_p = self.settings.MODEL_TOP_P
             
             logger.info(f"모델 로드 완료: {self.model_path}")
             self._initialized = True
@@ -118,9 +97,9 @@ class PostModel:
         
         Args:
             prompt: 생성을 위한 프롬프트
-            max_new_tokens: 최대 생성 토큰 수 (기본값: 초기화 값 사용)
-            temperature: 생성 온도 (기본값: 초기화 값 사용)
-            top_p: 누적 확률 임계값 (기본값: 초기화 값 사용)
+            max_new_tokens: 최대 생성 토큰 수 (기본값: 설정 값 사용)
+            temperature: 생성 온도 (기본값: 설정 값 사용)
+            top_p: 누적 확률 임계값 (기본값: 설정 값 사용)
             **kwargs: 추가 생성 파라미터
             
         Returns:
@@ -130,7 +109,7 @@ class PostModel:
             raise RuntimeError("모델이 초기화되지 않았습니다.")
         
         try:
-            # 생성 파라미터 설정 - max_length 대신 max_new_tokens 사용
+            # 생성 파라미터 설정 
             generation_config = {
                 "max_new_tokens": max_new_tokens or self.max_new_tokens,
                 "temperature": temperature or self.temperature,
