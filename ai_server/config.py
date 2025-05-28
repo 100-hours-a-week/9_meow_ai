@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     MODEL_TEMPERATURE: float  # 생성 온도
     MODEL_TOP_P: float  # 누적 확률 임계값
     
+    # 모델 로딩 설정
+    PRELOAD_MODELS: bool = True  # 서버 시작 시 모델 사전 로드 여부 (기본값: True)
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

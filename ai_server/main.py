@@ -8,16 +8,49 @@ from ai_server.post.post_schemas import PostRequest, PostResponse
 from ai_server.comment.comment_model import CommentTransformationService
 from ai_server.comment.comment_schemas import CommentRequest, CommentResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from ai_server.models.model_manager import get_model_manager
+import logging
+from contextlib import asynccontextmanager
 
+# 로깅 설정
+logger = logging.getLogger(__name__)
 
 # API 키 풀 초기화
 key_pool = initialize_key_pool()
 
-# FastAPI 앱 초기화
+# 애플리케이션 라이프스팬 설정
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """애플리케이션 시작 및 종료 시 실행되는 비동기 컨텍스트 매니저"""
+    try:
+        # 서버 시작 시 실행 (startup)
+        logger.info("서버 시작: 모델 백그라운드 로드 시작")
+        # 모델 매니저 인스턴스 가져오기
+        model_manager = get_model_manager()
+        # 백그라운드에서 모델 로드 시작 (비동기적 로드)
+        model_manager.initialize_models()
+        logger.info("서버 시작: 모델 백그라운드 로드 요청 완료")
+        
+        # 서버가 즉시 요청 처리 시작 (모델 로딩 완료 기다리지 않음)
+        yield
+        
+        # 서버 종료 시 실행 (shutdown)
+        logger.info("서버 종료: 모델 리소스 정리 시작...")
+        model_manager = get_model_manager()
+        model_manager.cleanup()
+        logger.info("서버 종료: 모델 리소스 정리 완료")
+        
+    except Exception as e:
+        logger.error(f"서버 라이프스팬 오류: {str(e)}")
+        # 초기화 실패 시에도 서버는 계속 실행
+        yield
+
+# FastAPI 앱 초기화 (lifespan 파라미터 사용)
 app = FastAPI(
     title="AI Text Transformation Server",
     description="SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하는 AI API 서버",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 
 # CORS 설정

@@ -17,8 +17,8 @@ class PostTransformationService:
     # post 변환 서비스 메서드(포스트 변환)
     async def transform_post(self, content: str, emotion: Emotion, post_type: PostType) -> str:
         try:
-            # ModelManager에서 모델 인스턴스 가져오기
-            model = self.model_manager.get_post_model()
+            # ModelManager에서 모델 인스턴스 비동기적으로 가져오기
+            model = await self.model_manager.get_post_model_async()
             
             # 1. 프롬프트 생성기 통해 텍스트 프롬프트 생성
             prompt_generator = PostPromptGenerator(
@@ -33,6 +33,7 @@ class PostTransformationService:
                 prompt=formatted_prompt,
                 temperature=0.4,
                 top_p=0.9,
+                max_new_tokens=256
             )
             
             # 결과가 없으면 원본 내용 반환
