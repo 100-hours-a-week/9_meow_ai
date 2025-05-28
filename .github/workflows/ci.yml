@@ -60,7 +60,8 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
       - name: Start FastAPI
-        run: uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 &
+        run: |
+          uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 &
       - name: Wait for Health (root)
         run: |
           for i in {1..10}; do
@@ -79,40 +80,49 @@ jobs:
       !contains(github.event.head_commit.message, '[cd skip]')
     steps:
       - uses: actions/checkout@v3
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID_FOR_ACTIONS }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_FOR_ACTIONS }}
           aws-region:            ${{ secrets.AWS_REGION }}
+
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
+
       - name: Determine ENV & App Names
         id: meta
         shell: bash
         run: |
           branch=${GITHUB_REF#refs/heads/}
-          if [[ "$branch" == "develop" ]]; then deploy_env=dev
-          elif [[ "$branch" =~ ^release/ ]]; then deploy_env=release
-          elif [[ "$branch" == "main" ]]; then deploy_env=prod
-          else deploy_env=skip; fi
+          if [[ "$branch" == "develop" ]]; then
+            deploy_env=dev
+          elif [[ "$branch" =~ ^release/ ]]; then
+            deploy_env=release
+          elif [[ "$branch" == "main" ]]; then
+            deploy_env=prod
+          else
+            deploy_env=skip
+          fi
 
-          echo "ENV=${deploy_env}"     >> $GITHUB_ENV
-          echo "SERVICE=9_meow_ai"     >> $GITHUB_ENV
-
+          service_name=9_meow_ai
           registry="${{ secrets.ECR_REGISTRY }}"; registry="${registry%/}"
-          echo "REGISTRY=${registry}"  >> $GITHUB_ENV
+          image_uri="${registry}/${deploy_env}/${service_name}"
 
-          image_uri="${registry}/${deploy_env}/${SERVICE}"
-          echo "IMAGE_URI=${image_uri}" >> $GITHUB_ENV
-
-          echo "APP_NAME=meow-${deploy_env}-deployment"       >> $GITHUB_ENV
-          echo "DG_NAME=meow-${deploy_env}-deployment_group" >> $GITHUB_ENV
+          echo "ENV=${deploy_env}"                             >> $GITHUB_ENV
+          echo "SERVICE=${service_name}"                       >> $GITHUB_ENV
+          echo "REGISTRY=${registry}"                          >> $GITHUB_ENV
+          echo "IMAGE_URI=${image_uri}"                        >> $GITHUB_ENV
+          echo "APP_NAME=meow-${deploy_env}-deployment"        >> $GITHUB_ENV
+          echo "DG_NAME=meow-${deploy_env}-deployment_group"   >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
       - name: Cache buildx layers
         uses: actions/cache@v3
         with:
@@ -120,10 +130,12 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ env.ENV }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-${{ env.ENV }}-
+
       - name: Build & Push Docker Image
         uses: docker/build-push-action@v4
         with:
           context: .
+          platforms: linux/amd64
           push: true
           tags: |
             ${{ env.IMAGE_URI }}:${{ github.sha }}
