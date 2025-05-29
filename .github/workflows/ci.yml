@@ -38,6 +38,9 @@ jobs:
           pip install -r requirements.txt
       - name: Lint / Syntax Check
         run: python -m pyflakes ai_server
+      - name : Run Unit Tests
+        run: |
+          pytest --maxfail=1 --disable-warnings -q
 
   integration:
     name: 🔗 AI Server Integration Tests
