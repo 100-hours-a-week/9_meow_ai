@@ -26,18 +26,25 @@ jobs:
       github.event_name == 'pull_request' &&
       github.base_ref == 'develop' &&
       contains(github.head_ref, 'feat')
+    env:
+      GOOGLE_API_KEYS: ${{ secrets.GOOGLE_API_KEYS }}
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Python 3.9
+      - name: Setup Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
       - name: Install deps
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Add project root to PYTHONPATH
+        run: echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
       - name: Lint / Syntax Check
         run: python -m pyflakes ai_server
+      - name : Run Unit Tests
+        run: |
+          pytest --maxfail=1 --disable-warnings -q
 
   integration:
     name: 🔗 AI Server Integration Tests
