@@ -36,6 +36,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Add project root to PYTHONPATH
+        run: echo "PYTHONPATH=${{ github.workspace }}" >> $GITHUB_ENV
       - name: Lint / Syntax Check
         run: python -m pyflakes ai_server
       - name : Run Unit Tests
