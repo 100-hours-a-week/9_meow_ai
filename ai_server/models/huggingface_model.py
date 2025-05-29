@@ -2,9 +2,9 @@
 허깅페이스 Meow-HyperCLOVAX 모델 구현
 """
 
-
 import logging
-from typing import Optional
+import os
+from typing import Optional, Union, List
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from ai_server.config import get_settings
@@ -27,16 +27,12 @@ class PostModel:
         self.model_path = self.settings.HUGGINGFACE_MODEL_PATH
         self.auth_token = self.settings.HUGGINGFACE_TOKEN
         
-        # 디바이스 설정 (자동 감지)
-        if torch.cuda.is_available():
-            # GPU 사용 가능
-            self.device = "cuda"
-            logger.info("CUDA GPU를 사용합니다.")
-        else:
-            # GPU 사용 불가능
-            self.device = "cpu"
-            logger.warning("CPU를 사용.")
-            
+        # GPU 메모리 설정 가져오기
+        self.gpu_memory = self.settings.GPU_MEMORY_FRACTION
+        
+        # 디바이스 설정 및 CUDA 초기화 (GCP 환경 최적화)
+        self._setup_device()
+        
         logger.info(f"모델 로드 시작: {self.model_path}, 디바이스: {self.device}")
         
         try:
@@ -47,30 +43,11 @@ class PostModel:
                 model_max_length=self.settings.MODEL_MAX_LENGTH
             )
             
-            # 모델 로드
-            if self.device == "cuda":
-                # GPU용 설정
-                self.model = AutoModelForCausalLM.from_pretrained(
-                    self.model_path,
-                    token=self.auth_token,
-                    torch_dtype=torch.float32
-                ).cuda()
-            else:
-                # CPU용 설정
-                self.model = AutoModelForCausalLM.from_pretrained(
-                    self.model_path,
-                    token=self.auth_token,
-                    torch_dtype=torch.float16
-                )
+            # 모델 로드 (GCP GPU 환경에 최적화)
+            self._load_model()
             
             # 생성 파이프라인 설정
-            device_id = 0 if self.device == "cuda" else -1
-            self.generator = pipeline(
-                "text-generation",
-                model=self.model,
-                tokenizer=self.tokenizer,
-                device=device_id
-            )
+            self._setup_pipeline()
             
             # 생성 설정 저장 (설정 파일 값 사용)
             self.max_new_tokens = self.settings.MODEL_MAX_NEW_TOKENS
@@ -83,6 +60,107 @@ class PostModel:
         except Exception as e:
             logger.error(f"모델 로드 실패: {str(e)}")
             raise RuntimeError(f"모델 로드 실패: {str(e)}")
+    
+    def _setup_device(self):
+        """
+        GPU 사용 가능 여부 확인 및 CUDA 설정 초기화
+        GCP 환경에 최적화된 설정 적용
+        """
+        # 환경 변수 설정
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
+        
+        # CUDA 가용성 체크
+        if torch.cuda.is_available():
+            try:
+                # GPU 정보 로깅
+                gpu_count = torch.cuda.device_count()
+                gpu_names = [torch.cuda.get_device_name(i) for i in range(gpu_count)]
+                logger.info(f"감지된 GPU: {gpu_count}개, 모델: {gpu_names}")
+                
+                # GPU 메모리 정보 로깅 (가능한 경우)
+                try:
+                    for i in range(gpu_count):
+                        mem_total = torch.cuda.get_device_properties(i).total_memory / (1024**3)  # GB 단위
+                        mem_reserved = torch.cuda.memory_reserved(i) / (1024**3)
+                        mem_allocated = torch.cuda.memory_allocated(i) / (1024**3)
+                        logger.info(f"GPU {i} 메모리: 총 {mem_total:.2f}GB, 예약됨 {mem_reserved:.2f}GB, 할당됨 {mem_allocated:.2f}GB")
+                except Exception as e:
+                    logger.warning(f"GPU 메모리 정보 조회 실패: {str(e)}")
+                
+                # CUDA 초기화 테스트
+                test_tensor = torch.tensor([1.0]).cuda()
+                del test_tensor
+                torch.cuda.empty_cache()
+                
+                # GPU 사용 가능
+                self.device = "cuda"
+                logger.info("CUDA GPU를 사용합니다.")
+            except Exception as e:
+                # CUDA 초기화 실패 시 CPU로 폴백
+                logger.warning(f"CUDA 초기화 실패 (CPU로 전환): {str(e)}")
+                self.device = "cpu"
+        else:
+            # GPU 사용 불가능
+            self.device = "cpu"
+            logger.warning("GPU를 찾을 수 없습니다. CPU를 사용합니다.")
+    
+    def _load_model(self):
+        """
+        모델 로드 - 디바이스 및 메모리 설정에 맞게 최적화
+        """
+        model_kwargs = {
+            "token": self.auth_token,
+            "device_map": "auto",  # 자동 장치 할당
+        }
+        
+        if self.device == "cuda":
+            # GPU 설정
+            torch_dtype = torch.float16  # GCP 환경에서는 float16이 성능 최적화에 유리
+            
+            # 메모리 제한이 있는 경우 설정 추가
+            if self.gpu_memory and self.gpu_memory < 1.0:
+                model_kwargs["max_memory"] = {0: f"{int(self.gpu_memory * 100)}%"}
+                logger.info(f"GPU 메모리 사용량 제한: {int(self.gpu_memory * 100)}%")
+            
+            model_kwargs["torch_dtype"] = torch_dtype
+            logger.info(f"GPU 모델 로드 설정: {model_kwargs}")
+            
+            # 그래디언트 계산 비활성화 (추론 모드)
+            with torch.no_grad():
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    self.model_path,
+                    **model_kwargs
+                )
+        else:
+            # CPU 설정
+            model_kwargs["torch_dtype"] = torch.float32  # CPU에서는 float32가 안정적
+            logger.info(f"CPU 모델 로드 설정: {model_kwargs}")
+            
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_path,
+                **model_kwargs
+            )
+    
+    def _setup_pipeline(self):
+        """
+        생성 파이프라인 설정
+        """
+        if self.device == "cuda":
+            # GPU 파이프라인 설정
+            self.generator = pipeline(
+                "text-generation",
+                model=self.model,
+                tokenizer=self.tokenizer,
+                device="cuda:0"  # 첫 번째 GPU 사용
+            )
+        else:
+            # CPU 파이프라인 설정
+            self.generator = pipeline(
+                "text-generation",
+                model=self.model,
+                tokenizer=self.tokenizer,
+                device=-1  # CPU 사용
+            )
     
     async def generate(
         self, 
@@ -143,4 +221,5 @@ class PostModel:
             # GPU 메모리 정리
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+                logger.info("GPU 메모리 정리 완료")
             logger.info("모델 언로드 완료") 

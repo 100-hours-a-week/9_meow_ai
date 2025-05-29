@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     # 모델 로딩 설정
     PRELOAD_MODELS: bool = True  # 서버 시작 시 모델 사전 로드 여부 (기본값: True)
     
+    # GPU 설정 (GCP 환경용)
+    USE_GPU: bool = True  # GPU 사용 여부 (기본값: True)
+    GPU_MEMORY_FRACTION: float = 0.9  # GPU 메모리 사용 비율 (0.0~1.0, 기본값: 90%)
+    USE_MIXED_PRECISION: bool = True  # 혼합 정밀도 사용 여부 (기본값: True)
+    DEVICE_MAP: str = "auto"  # 장치 매핑 설정 (auto, balanced, sequential)
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

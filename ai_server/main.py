@@ -11,6 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from ai_server.models.model_manager import get_model_manager
 import logging
 from contextlib import asynccontextmanager
+import torch
 
 # 로깅 설정
 logger = logging.getLogger(__name__)

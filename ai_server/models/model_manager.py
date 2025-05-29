@@ -6,7 +6,8 @@ import os
 import logging
 import threading
 import asyncio
-from typing import Dict, Any
+import torch
+from typing import Dict, Any, Optional
 
 from ai_server.models.huggingface_model import PostModel
 from ai_server.config import get_settings
@@ -46,7 +47,47 @@ class ModelManager:
             # 모델 로딩 상태 추적
             self._model_ready: Dict[str, bool] = {"post": False}
             
+            # GPU 설정 및 초기화
+            self._setup_gpu()
+            
             logger.info("ModelManager 초기화 완료")
+    
+    def _setup_gpu(self):
+        """GPU 설정 및 초기화"""
+        try:
+            if self.settings.USE_GPU:
+                if torch.cuda.is_available():
+                    # CUDA 초기화 전 설정
+                    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
+                    
+                    # CUDA 정보 로깅
+                    gpu_count = torch.cuda.device_count()
+                    gpu_names = [torch.cuda.get_device_name(i) for i in range(gpu_count)]
+                    
+                    logger.info(f"사용 가능한 GPU: {gpu_count}개")
+                    for i, name in enumerate(gpu_names):
+                        logger.info(f"GPU {i}: {name}")
+                        
+                    # GPU 초기화 테스트
+                    try:
+                        test_tensor = torch.ones(1, device="cuda")
+                        del test_tensor
+                        torch.cuda.empty_cache()
+                        logger.info("CUDA 초기화 성공")
+                    except Exception as e:
+                        logger.warning(f"CUDA 초기화 테스트 실패: {str(e)}")
+                else:
+                    logger.warning("GPU가 감지되지 않았습니다. CPU 모드로 실행됩니다.")
+            else:
+                logger.info("설정에 따라 CPU 모드로 실행됩니다.")
+                
+            # GPU 메모리 사용 제한 설정
+            if self.settings.GPU_MEMORY_FRACTION < 1.0 and torch.cuda.is_available():
+                logger.info(f"GPU 메모리 사용 제한: {int(self.settings.GPU_MEMORY_FRACTION * 100)}%")
+                
+        except Exception as e:
+            logger.error(f"GPU 설정 초기화 중 오류 발생: {str(e)}")
+            logger.warning("기본 설정으로 계속 진행합니다.")
     
     def initialize_models(self, preload: bool = None):
         """
@@ -85,6 +126,20 @@ class ModelManager:
         """
         try:
             logger.info(f"{model_name} 모델 백그라운드 로드 시작")
+            
+            # GPU 상태 확인 및 메모리 정리
+            if torch.cuda.is_available():
+                try:
+                    # 메모리 정리
+                    torch.cuda.empty_cache()
+                    
+                    # 현재 GPU 메모리 상태 로깅
+                    for i in range(torch.cuda.device_count()):
+                        mem_free = torch.cuda.memory_reserved(i) - torch.cuda.memory_allocated(i)
+                        mem_total = torch.cuda.get_device_properties(i).total_memory
+                        logger.info(f"GPU {i} 메모리: 사용 가능 {mem_free/(1024**2):.2f}MB / 전체 {mem_total/(1024**2):.2f}MB")
+                except Exception as e:
+                    logger.warning(f"GPU 메모리 정보 확인 실패: {str(e)}")
             
             # 모델 인스턴스 생성
             if model_name == "post":
@@ -227,6 +282,14 @@ class ModelManager:
             
             self._models = {}
             self._model_ready = {"post": False}
+            
+            # GPU 메모리 정리
+            if torch.cuda.is_available():
+                try:
+                    torch.cuda.empty_cache()
+                    logger.info("GPU 메모리 정리 완료")
+                except Exception as e:
+                    logger.warning(f"GPU 메모리 정리 실패: {str(e)}")
 
 # 싱글톤 인스턴스 가져오기 헬퍼 함수
 def get_model_manager() -> ModelManager:
