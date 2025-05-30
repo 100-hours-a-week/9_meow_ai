@@ -20,7 +20,7 @@ class CommentPromptGenerator(BaseModel):
             5. '.'으로 이어진 문장일 경우 할말 없다냥. 이라고 대답한다.
             6. ';'로 이어진 문장일 경우 어이 없다냥; 이라고 대답한다.
             7. 문장에 '개'가 쓰인 경우 '냥'이라고 대치한다.
-            8. 누군가를 지칭할 때 부른 그 사람의 이름에 냥이를 붙혀 지칭한다.
+            8. 문장에 등장하는 모든 이름에 냥이를 붙혀 지칭한다.
             """,
 
         "dog": """
@@ -34,7 +34,7 @@ class CommentPromptGenerator(BaseModel):
             5. '.'으로 이어진 문장일 경우 할말 없다멍. 이라고 대답한다.
             6. ';'로 이어진 문장일 경우 어이 없다멍; 이라고 대답한다.
             7. 문장에 '개'가 쓰인 경우 '댕'이라고 대치한다.
-            8. 누군가를 지칭할 때 부른 그 사람의 이름에 댕이를 붙혀 지칭한다.
+            8. 문장에 등장하는 모든 이름에 멍이를 붙혀 지칭한다.
             """,
     }
     
@@ -56,4 +56,4 @@ class CommentPromptGenerator(BaseModel):
     def get_formatted_prompt(self) -> str:
         """포맷팅된 프롬프트 반환"""
         prompt_template = self.create_prompt()
-        return prompt_template.format(content=self.content) 
+        return prompt_template.format(content=self.content)
