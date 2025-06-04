@@ -10,21 +10,8 @@ class Settings(BaseSettings):
     # API 키 설정
     GOOGLE_API_KEYS: List[str]  # Google API 키 목록
     
-    # 허깅페이스 모델 설정
-    HUGGINGFACE_MODEL_PATH: str  # 허깅페이스 모델 경로
+    # 허깅페이스 인증 토큰
     HUGGINGFACE_TOKEN: Optional[str] = None  # 허깅페이스 API 토큰
-    
-    # 모델 생성 파라미터
-    MODEL_MAX_LENGTH: int  # 최대 생성 길이
-    MODEL_MAX_NEW_TOKENS: int = 256  # 최대 생성 토큰 수 (기본값 256)
-    MODEL_TEMPERATURE: float  # 생성 온도
-    MODEL_TOP_P: float  # 누적 확률 임계값
-    
-    # 모델 로딩 설정
-    PRELOAD_MODELS: bool = True  # 서버 시작 시 모델 사전 로드 여부 (기본값: True)
-    
-    # GPU 설정
-    GPU_MEMORY_FRACTION: float = 0.9  # GPU 메모리 사용 비율 (0.0~1.0, 기본값: 90%)
     
     class Config:
         env_file = ".env"

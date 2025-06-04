@@ -14,12 +14,12 @@ pyflakes
 requests>=2.31.0
 
 # 허깅페이스 모델 의존성
-transformers>=4.38.0
-torch>=2.1.0
-accelerate>=0.23.0
-bitsandbytes>=0.41.1
-optimum>=1.16.0
-flash-attn>=2.3.4 ; platform_system != "Darwin" and platform_machine != "arm64"
+transformers==4.40.2
+torch==2.1.2
+accelerate==0.28.0
+bitsandbytes==0.42.0
+optimum==1.17.1
 nvidia-ml-py>=12.535.108
-safetensors>=0.4.0
-einops>=0.7.0
+safetensors==0.4.2
+einops==0.7.0
+peft==0.10.0

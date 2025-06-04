@@ -1,12 +1,13 @@
 """
-허깅페이스 Meow-HyperCLOVAX 모델 구현
+허깅페이스 Meow-HyperCLOVAX 모델 구현 (T4 GPU 최적화 버전)
 """
 
 import logging
 import os
-from typing import Optional
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from typing import Optional
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline, BitsAndBytesConfig
+from peft import PeftModel
 from ai_server.config import get_settings
 
 # 로깅 설정
@@ -14,53 +15,44 @@ logger = logging.getLogger(__name__)
 
 class PostModel:
     """
-    파인튜닝된 Meow-HyperCLOVAX 모델을 로드하고 관리하는 클래스
+    파인튜닝된 Meow-HyperCLOVAX 모델을 로드하고 관리하는 클래스 (T4 GPU 전용)
     """
-    # 클래스 변수로 settings를 한 번만 로드
-    settings = get_settings()
+    # QLoRA 모델 경로 및 파라미터 직접 정의
+    QLORA_MODEL_PATH = "haebo/Meow-HyperCLOVAX-1.5B_QLoRA_nf4_0527"
+    BASE_MODEL_PATH = "naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B"  # QLoRA의 베이스 모델
+    MODEL_MAX_LENGTH = 512
+    MODEL_MAX_NEW_TOKENS = 256
+    MODEL_TEMPERATURE = 0.4
+    MODEL_TOP_P = 0.9
+    GPU_MEMORY_FRACTION = 0.9  # T4 GPU 메모리 사용 비율
     
     def __init__(self):
         """
-        모델 초기화 - GPU 환경에 최적화
+        QLoRA 모델 초기화
         """
-        # 설정 파일에서 값 가져오기
-        self.model_path = self.settings.HUGGINGFACE_MODEL_PATH
-        self.auth_token = self.settings.HUGGINGFACE_TOKEN
+        # 모델 경로 설정
+        self.qlora_model_path = self.QLORA_MODEL_PATH
+        self.base_model_path = self.BASE_MODEL_PATH
+        
+        # 인증 토큰은 환경 변수에서 가져옴
+        settings = get_settings()
+        self.auth_token = settings.HUGGINGFACE_TOKEN
         
         # GPU 환경 최적화 설정
         self._setup_gpu()
         
-        logger.info(f"모델 로드 시작: {self.model_path}")
+        logger.info(f"QLoRA 모델 로드 시작: {self.qlora_model_path}")
         
-        try:
-            # 토크나이저 및 모델 로드
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_path,
-                token=self.auth_token,
-                model_max_length=self.settings.MODEL_MAX_LENGTH
-            )
-            
-            self._load_model()
-            
-            # 파이프라인 설정
-            self.generator = pipeline(
-                "text-generation",
-                model=self.model,
-                tokenizer=self.tokenizer,
-                device="cuda:0"
-            )
-            
-            # 생성 설정 저장
-            self.max_new_tokens = self.settings.MODEL_MAX_NEW_TOKENS
-            self.temperature = self.settings.MODEL_TEMPERATURE
-            self.top_p = self.settings.MODEL_TOP_P
-            
-            logger.info(f"모델 로드 완료: {self.model_path}")
-            self._initialized = True
-            
-        except Exception as e:
-            logger.error(f"모델 로드 실패: {str(e)}")
-            raise RuntimeError(f"모델 로드 실패: {str(e)}")
+        # QLoRA 모델 로드
+        self._load_qlora_model()
+        
+        # 생성 설정 저장
+        self.max_new_tokens = self.MODEL_MAX_NEW_TOKENS
+        self.temperature = self.MODEL_TEMPERATURE
+        self.top_p = self.MODEL_TOP_P
+        
+        logger.info(f"QLoRA 모델 로드 완료: {self.qlora_model_path}")
+        self._initialized = True
     
     def _setup_gpu(self):
         """
@@ -73,37 +65,62 @@ class PostModel:
         torch.cuda.empty_cache()
         
         # GPU 메모리 정보 로깅
-        try:
-            mem_total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
-            logger.info(f"GPU 메모리: 총 {mem_total:.2f}GB")
-        except Exception as e:
-            logger.warning(f"GPU 메모리 정보 조회 실패: {str(e)}")
-        
+        mem_total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+        mem_name = torch.cuda.get_device_name(0)
+        logger.info(f"GPU: {mem_name}, 메모리: 총 {mem_total:.2f}GB")
+        logger.info(f"GPU 메모리 사용 제한: {int(self.GPU_MEMORY_FRACTION * 100)}%")
         logger.info("GPU 초기화 완료")
     
-    def _load_model(self):
+    def _load_qlora_model(self):
         """
-        GPU에 최적화된 모델 로드
+        QLoRA 파인튜닝된 모델을 올바르게 로드
         """
-        # 최적화 설정
-        model_kwargs = {
-            "token": self.auth_token,
-            "device_map": "auto",
-            "torch_dtype": torch.float16,
-            "low_cpu_mem_usage": True
-        }
+        # 4bit 양자화 설정
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_use_double_quant=True,
+        )
         
-        # 메모리 제한 설정
-        gpu_memory = self.settings.GPU_MEMORY_FRACTION
-        if gpu_memory and gpu_memory < 1.0:
-            model_kwargs["max_memory"] = {0: f"{int(gpu_memory * 100)}%"}
+        # 베이스 모델 로드 (4bit 양자화)
+        logger.info(f"베이스 모델 로드 중: {self.base_model_path}")
+        base_model = AutoModelForCausalLM.from_pretrained(
+            self.base_model_path,
+            quantization_config=bnb_config,
+            device_map="auto",
+            torch_dtype=torch.bfloat16,
+            token=self.auth_token,
+            low_cpu_mem_usage=True,
+            max_memory={0: f"{int(self.GPU_MEMORY_FRACTION * 100)}%"}
+        )
         
-        # 그래디언트 계산 비활성화 (추론 모드)
-        with torch.no_grad():
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_path,
-                **model_kwargs
-            )
+        # QLoRA 어댑터 로드
+        logger.info(f"QLoRA 어댑터 로드 중: {self.qlora_model_path}")
+        self.model = PeftModel.from_pretrained(
+            base_model,
+            self.qlora_model_path,
+            token=self.auth_token
+        )
+        
+        # 토크나이저 로드 (QLoRA 모델에서)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.qlora_model_path,
+            token=self.auth_token,
+            model_max_length=self.MODEL_MAX_LENGTH
+        )
+        
+        # 패딩 토큰 설정 (필요한 경우)
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
+        
+        # 파이프라인 설정
+        self.generator = pipeline(
+            "text-generation",
+            model=self.model,
+            tokenizer=self.tokenizer,
+            device="cuda:0"
+        )
     
     async def generate(
         self, 
@@ -116,34 +133,27 @@ class PostModel:
         """
         프롬프트를 기반으로 텍스트 생성
         """
-        if not hasattr(self, "_initialized") or not self._initialized:
-            raise RuntimeError("모델이 초기화되지 않았습니다.")
+        # 생성 설정
+        generation_config = {
+            "max_new_tokens": max_new_tokens or self.max_new_tokens,
+            "temperature": temperature or self.temperature,
+            "top_p": top_p or self.top_p,
+            "do_sample": True,
+            "return_full_text": False,
+            "pad_token_id": self.tokenizer.eos_token_id,
+            **kwargs
+        }
         
-        try:
-            # 생성 설정
-            generation_config = {
-                "max_new_tokens": max_new_tokens or self.max_new_tokens,
-                "temperature": temperature or self.temperature,
-                "top_p": top_p or self.top_p,
-                "do_sample": True,
-                "return_full_text": False,
-                **kwargs
-            }
-            
-            # 텍스트 생성 및 결과 반환
-            result = self.generator(prompt, **generation_config)
-            return result[0]["generated_text"].strip()
-            
-        except Exception as e:
-            logger.error(f"텍스트 생성 실패: {str(e)}")
-            raise RuntimeError(f"텍스트 생성 실패: {str(e)}")
+        # 텍스트 생성 및 결과 반환
+        result = self.generator(prompt, **generation_config)
+        return result[0]["generated_text"].strip()
     
     def unload(self):
         """모델 메모리에서 언로드"""
-        if hasattr(self, "model") and self.model is not None:
+        if hasattr(self, "model"):
             del self.model
             del self.tokenizer
             del self.generator
             self._initialized = False
             torch.cuda.empty_cache()
-            logger.info("모델 언로드 완료") 
+            logger.info("QLoRA 모델 언로드 완료") 
