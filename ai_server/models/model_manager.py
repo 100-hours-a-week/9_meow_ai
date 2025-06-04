@@ -69,9 +69,6 @@ class ModelManager:
         torch.cuda.empty_cache()
         logger.info("CUDA 초기화 완료")
             
-        # GPU 메모리 사용 제한 설정
-        logger.info(f"GPU 메모리 사용 제한: {int(PostModel.GPU_MEMORY_FRACTION * 100)}%")
-    
     def _load_models(self):
         """모든 모델 직접 로드"""
         try:

@@ -7,7 +7,7 @@ import os
 import torch
 from typing import Optional
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline, BitsAndBytesConfig
-from peft import PeftModel
+from peft import PeftModel, PeftConfig
 from ai_server.config import get_settings
 
 # 로깅 설정
@@ -15,21 +15,25 @@ logger = logging.getLogger(__name__)
 
 class PostModel:
     """
-    파인튜닝된 Meow-HyperCLOVAX 모델을 로드하고 관리하는 클래스 (T4 GPU 전용)
+    파인튜닝된 Meow-Qwen2.5 모델을 로드하고 관리하는 클래스 (T4 GPU 전용)
     """
     # QLoRA 모델 경로 및 파라미터 직접 정의
-    QLORA_MODEL_PATH = "haebo/Meow-HyperCLOVAX-1.5B_QLoRA_nf4_0527"
-    BASE_MODEL_PATH = "naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B"  # QLoRA의 베이스 모델
+    QLORA_MODEL_PATH = "haebo/Meow-Qwen2.5-7B_QLoRA_nf4_0527"
+    BASE_MODEL_PATH = "Qwen/Qwen2.5-7B-Instruct"  # QLoRA의 베이스 모델
     MODEL_MAX_LENGTH = 512
     MODEL_MAX_NEW_TOKENS = 256
     MODEL_TEMPERATURE = 0.4
     MODEL_TOP_P = 0.9
-    GPU_MEMORY_FRACTION = 0.9  # T4 GPU 메모리 사용 비율
     
     def __init__(self):
         """
         QLoRA 모델 초기화
         """
+        # accelerate 관련 환경 변수 설정 (None 오류 방지)
+        os.environ.setdefault("ACCELERATE_USE_CPU", "false")
+        os.environ.setdefault("ACCELERATE_USE_DEEPSPEED", "false")
+        os.environ.setdefault("ACCELERATE_USE_FSDP", "false")
+        
         # 모델 경로 설정
         self.qlora_model_path = self.QLORA_MODEL_PATH
         self.base_model_path = self.BASE_MODEL_PATH
@@ -68,7 +72,6 @@ class PostModel:
         mem_total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         mem_name = torch.cuda.get_device_name(0)
         logger.info(f"GPU: {mem_name}, 메모리: 총 {mem_total:.2f}GB")
-        logger.info(f"GPU 메모리 사용 제한: {int(self.GPU_MEMORY_FRACTION * 100)}%")
         logger.info("GPU 초기화 완료")
     
     def _load_qlora_model(self):
@@ -88,19 +91,29 @@ class PostModel:
         base_model = AutoModelForCausalLM.from_pretrained(
             self.base_model_path,
             quantization_config=bnb_config,
-            device_map="auto",
+            device_map={"": 0},  # 첫 번째 GPU에 명시적으로 할당
             torch_dtype=torch.bfloat16,
             token=self.auth_token,
             low_cpu_mem_usage=True,
-            max_memory={0: f"{int(self.GPU_MEMORY_FRACTION * 100)}%"}
+            trust_remote_code=True
         )
         
         # QLoRA 어댑터 로드
         logger.info(f"QLoRA 어댑터 로드 중: {self.qlora_model_path}")
+        
+        # PEFT 설정 로드 및 불필요한 파라미터 제거
+        peft_config = PeftConfig.from_pretrained(self.qlora_model_path, token=self.auth_token)
+        
+        # corda_config가 있다면 제거 (호환성 문제 방지)
+        if hasattr(peft_config, 'corda_config'):
+            delattr(peft_config, 'corda_config')
+            logger.info("불필요한 corda_config 파라미터 제거됨")
+        
         self.model = PeftModel.from_pretrained(
             base_model,
             self.qlora_model_path,
-            token=self.auth_token
+            token=self.auth_token,
+            config=peft_config
         )
         
         # 토크나이저 로드 (QLoRA 모델에서)
@@ -114,13 +127,10 @@ class PostModel:
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
         
-        # 파이프라인 설정
-        self.generator = pipeline(
-            "text-generation",
-            model=self.model,
-            tokenizer=self.tokenizer,
-            device="cuda:0"
-        )
+        # 모델을 평가 모드로 설정
+        self.model.eval()
+        
+        logger.info("QLoRA 모델과 토크나이저 로드 완료")
     
     async def generate(
         self, 
@@ -133,27 +143,42 @@ class PostModel:
         """
         프롬프트를 기반으로 텍스트 생성
         """
-        # 생성 설정
-        generation_config = {
-            "max_new_tokens": max_new_tokens or self.max_new_tokens,
-            "temperature": temperature or self.temperature,
-            "top_p": top_p or self.top_p,
-            "do_sample": True,
-            "return_full_text": False,
-            "pad_token_id": self.tokenizer.eos_token_id,
-            **kwargs
-        }
+        # 생성 파라미터 설정
+        max_new_tokens = max_new_tokens or self.max_new_tokens
+        temperature = temperature or self.temperature
+        top_p = top_p or self.top_p
         
-        # 텍스트 생성 및 결과 반환
-        result = self.generator(prompt, **generation_config)
-        return result[0]["generated_text"].strip()
+        # 입력 토큰화
+        inputs = self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device)
+        
+        # 어텐션 마스크 생성
+        attention_mask = torch.ones_like(inputs)
+        
+        # 텍스트 생성
+        with torch.no_grad():
+            outputs = self.model.generate(
+                inputs,
+                attention_mask=attention_mask,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                top_p=top_p,
+                do_sample=True,
+                pad_token_id=self.tokenizer.eos_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
+                **kwargs
+            )
+        
+        # 새로 생성된 토큰만 디코딩 (입력 제외)
+        generated_tokens = outputs[0][inputs.shape[1]:]
+        result = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+        
+        return result.strip()
     
     def unload(self):
         """모델 메모리에서 언로드"""
         if hasattr(self, "model"):
             del self.model
             del self.tokenizer
-            del self.generator
             self._initialized = False
             torch.cuda.empty_cache()
             logger.info("QLoRA 모델 언로드 완료") 

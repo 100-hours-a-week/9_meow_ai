@@ -1,12 +1,12 @@
 # PyTorch (CUDA 12.1 호환성을 위해 먼저 설치)
 torch==2.4.1  #pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cu121
 # Hugging Face 관련 라이브러리
-transformers==4.40.2
-accelerate==0.28.0
-bitsandbytes==0.42.0
-optimum==1.17.1
-peft==0.10.0
-safetensors==0.4.2
+transformers>=4.44.0,<4.50.0
+tokenizers>=0.19.1
+accelerate>=1.7.0
+peft>=0.15.2
+bitsandbytes>=0.46.0
+safetensors>=0.5.3
 einops==0.7.0
 
 # API 관련 라이브러리
@@ -19,7 +19,7 @@ python-dotenv==1.0.1
 
 # LangChain 관련 라이브러리
 langchain==0.1.9
-langchain-core==0.1.53
+langchain-core>=0.1.53
 langchain-community==0.0.38
 langchain-google-genai==0.0.11
 google-generativeai==0.4.1
