@@ -28,21 +28,24 @@ class PostTransformationService:
             )
             formatted_prompt = prompt_generator.get_formatted_prompt()
 
-            # 2. 모델을 사용하여 텍스트 생성
+            # 2. 모델을 사용하여 텍스트 생성 (모델의 기본 설정값 사용)
             result = await model.generate(
                 prompt=formatted_prompt,
-                temperature=0.4,
-                top_p=0.9,
-                max_new_tokens=256
+                temperature=model.temperature,
+                top_p=model.top_p,
+                max_new_tokens=model.max_new_tokens
             )
             
             # 결과가 없으면 원본 내용 반환
-            if not result:
+            if not result or not result.strip():
                 logger.warning("모델이 결과를 생성하지 않았습니다. 원본 내용을 반환합니다.")
                 return content
                 
-            return result
+            return result.strip()
 
+        except RuntimeError as re:
+            logger.error(f"모델 로드 실패: {str(re)}")
+            raise Exception(f"Model loading failed: {str(re)}")
         except Exception as e:
             logger.error(f"포스트 변환 실패: {str(e)}")
             raise Exception(f"Failed to transform post: {str(e)}") 
