@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from enum import Enum
+from typing import Optional
 
 # 포스트 타입
 class PostType(str, Enum):
@@ -22,4 +23,4 @@ class PostRequest(BaseModel):
 class PostResponse(BaseModel):
     status_code: int = Field(..., description="응답 상태 코드")
     message: str = Field(..., description="응답 메시지")
-    data: str | None = Field(None, description="변환된 텍스트, 에러 발생 시 None")
+    data: Optional[str] = Field(None, description="변환된 텍스트, 에러 발생 시 None")

@@ -8,22 +8,44 @@ from ai_server.post.post_schemas import PostRequest, PostResponse
 from ai_server.comment.comment_model import CommentTransformationService
 from ai_server.comment.comment_schemas import CommentRequest, CommentResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from ai_server.models.model_manager import get_model_manager
+from contextlib import asynccontextmanager
+import logging
 
+# 로깅 설정
+logger = logging.getLogger(__name__)
 
 # API 키 풀 초기화
 key_pool = initialize_key_pool()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """서버 시작/종료 시 실행되는 lifespan 컨텍스트 매니저"""
+    # 서버 시작
+    logger.info("서버 시작: 모델 로드 시작")
+    model_manager = get_model_manager()
+    model_manager.initialize_models()
+    logger.info("서버 시작: 모델 로드 완료")
+    
+    yield
+    
+    # 서버 종료
+    logger.info("서버 종료: 모델 리소스 정리 시작...")
+    model_manager.cleanup()
+    logger.info("서버 종료: 모델 리소스 정리 완료")
 
 # FastAPI 앱 초기화
 app = FastAPI(
     title="AI Text Transformation Server",
     description="SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하는 AI API 서버",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],  # 백엔드 주소
+    allow_origins=["*"],  # 백엔드 주소
     allow_credentials=True,
     allow_methods=["POST", "GET"],
     allow_headers=["*"]
@@ -89,8 +111,7 @@ async def root():
         200: {"model": PostResponse, "description": "Successfully transformed text"},
         400: {"model": PostResponse, "description": "Empty Input"},
         422: {"model": PostResponse, "description": "wrong post_type or emotion"},
-        500: {"model": PostResponse, "description": "internal_server_error"},
-        503: {"model": PostResponse, "description": "API key is not available"}
+        500: {"model": PostResponse, "description": "internal_server_error"}
     }
 )
 async def generate_post(request: PostRequest):
@@ -98,14 +119,9 @@ async def generate_post(request: PostRequest):
     if not request.content.strip():
         raise HTTPException(status_code=400, detail="Empty Input")
 
-    # 사용 가능한 API 키 획득
-    api_key = await key_pool.get_available_key()
-    if not api_key:
-        raise HTTPException(status_code=503, detail="API key is not available")
-
     try:
         # 스키마에서 정의된 타입을 사용하여 포스트 변환 서비스 실행
-        post_service = PostTransformationService(api_key=api_key)
+        post_service = PostTransformationService()  # 기본 모델 사용
         transformed_content = await post_service.transform_post(
             content=request.content,
             emotion=request.emotion,
