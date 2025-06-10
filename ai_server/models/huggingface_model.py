@@ -18,10 +18,12 @@ class PostModel:
     """
     # 풀파인튜닝 모델 경로 및 파라미터 정의
     FINE_TUNED_MODEL_PATH = "haebo/Meow-HyperCLOVAX-1.5B_FullFT_fp32_0527"
-    MODEL_MAX_LENGTH = 2048 
-    MODEL_MAX_NEW_TOKENS = 512  
-    MODEL_TEMPERATURE = 0.4
-    MODEL_TOP_P = 0.9
+    MODEL_LOAD_DTYPE = torch.float32
+    MODEL_MAX_LENGTH = 1024 # HyperCLOVAX-SEED-1.5B(1/2 값)
+    MODEL_MAX_NEW_TOKENS = 150  
+    MODEL_TEMPERATURE = 0.2
+    MODEL_TOP_P = 0.3 # 좀 더 낮출 필요 있을 듯 (사용할 확률 분포값)
+    MODEL_REPETITION_PENALTY = 1.6 # 반복 억제 
     
     def __init__(self):
         """
@@ -34,6 +36,7 @@ class PostModel:
         
         # 모델 경로 설정
         self.fine_tuned_model_path = self.FINE_TUNED_MODEL_PATH
+        self.model_load_dtype = self.MODEL_LOAD_DTYPE
         
         # 인증 토큰은 환경 변수에서 가져옴
         settings = get_settings()
@@ -51,6 +54,7 @@ class PostModel:
         self.max_new_tokens = self.MODEL_MAX_NEW_TOKENS
         self.temperature = self.MODEL_TEMPERATURE
         self.top_p = self.MODEL_TOP_P
+        self.repetition_penalty = self.MODEL_REPETITION_PENALTY
         
         logger.info(f"파인튜닝 모델 로드 완료: {self.fine_tuned_model_path}")
         self._initialized = True
@@ -81,7 +85,7 @@ class PostModel:
         self.model = AutoModelForCausalLM.from_pretrained(
             self.fine_tuned_model_path,
             device_map="auto",  # 자동 디바이스 매핑
-            torch_dtype=torch.float32,  # 32비트 정밀도
+            torch_dtype=self.model_load_dtype,  # 32비트 정밀도
             token=self.auth_token,
             low_cpu_mem_usage=True,
             trust_remote_code=True
@@ -104,12 +108,38 @@ class PostModel:
         
         logger.info("풀파인튜닝 모델과 토크나이저 로드 완료")
     
+    def _postprocess(self, text: str) -> str:
+        """
+        모델 출력 후처리
+        - '### transformed_content:' 이후 콜론 다음 텍스트만 추출
+        - 감정/유형 제거, 반복 제거, 공백 정리
+        """
+        import re
+
+        # 1. "### transformed_content:" 이후 텍스트 추출
+        if "### transformed_content" in text:
+            match = re.search(r"### transformed_content:\s*(.*)", text, flags=re.DOTALL)
+            if match:
+                text = match.group(1).strip()
+
+        # 2. 감정/유형 관련 문구 제거
+        text = re.sub(r"(### (emotion|post_type):.*?)", "", text, flags=re.DOTALL)
+
+        # 3. 반복되는 단어 제거 (예: "냐하! 냐하! 냐하!" → "냐하!")
+        text = re.sub(r"(\b\w+!)( \1){2,}", r"\1", text)
+
+        # 4. 공백 정리
+        text = re.sub(r"\s+", " ", text).strip()
+
+        return text
+
     async def generate(
         self, 
         prompt: str, 
         max_new_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
+        repetition_penalty: Optional[float] = None,
         **kwargs
     ) -> str:
         """
@@ -126,36 +156,42 @@ class PostModel:
             생성된 텍스트
         """
         # 생성 파라미터 설정
-        max_new_tokens = max_new_tokens or self.max_new_tokens
+        # max_new_tokens = max_new_tokens or self.max_new_tokens
         temperature = temperature or self.temperature
         top_p = top_p or self.top_p
-        
+        repetition_penalty = repetition_penalty or self.repetition_penalty
         # 입력 토큰화
         inputs = self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device)
         
+        # 동적 max_new_tokens 설정 : 출력 길이가 인풋에 비례하여 증가하도록 설정
+        default_ratio = 1.6 # 출력 / 인풋
+        max_limit = self.max_new_tokens
+        input_length = inputs.shape[1]
+        dynamic_max_new_tokens = min(int(input_length * default_ratio), max_limit)
+        max_new_tokens = dynamic_max_new_tokens or max_new_tokens
+        
         # 어텐션 마스크 생성
         attention_mask = torch.ones_like(inputs)
-        
         # 텍스트 생성
         with torch.no_grad():
             outputs = self.model.generate(
                 inputs,
                 attention_mask=attention_mask,
                 max_new_tokens=max_new_tokens,
-                temperature=temperature,
+                temperature=temperature, # 낮게 설정 : 높은 확률의 토큰 위주 선택
+                do_sample=True, # True + 낮은 Temp : 약간의 다양성 부여 (False 하면 가장 높은 확률의 결과만 도출)
                 top_p=top_p,
-                do_sample=True,
                 pad_token_id=self.tokenizer.eos_token_id,
                 eos_token_id=self.tokenizer.eos_token_id,
-                repetition_penalty=1.1,  # 반복 방지
+                repetition_penalty=repetition_penalty,  
                 **kwargs
             )
-        
+
         # 새로 생성된 토큰만 디코딩 (입력 제외)
-        generated_tokens = outputs[0][inputs.shape[1]:]
-        result = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
-        
-        return result.strip()
+        new_tokens = outputs[0][inputs.shape[1]:]
+        decoded = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
+        processed_text = self._postprocess(decoded)
+        return processed_text
     
     def get_model_info(self) -> dict:
         """
@@ -166,12 +202,13 @@ class PostModel:
         """
         return {
             "model_path": self.fine_tuned_model_path,
-            "max_length": self.MODEL_MAX_LENGTH,
+            "max_length": self.model_max_length,
             "max_new_tokens": self.max_new_tokens,
             "temperature": self.temperature,
             "top_p": self.top_p,
             "device": str(self.model.device) if hasattr(self, 'model') else "not_loaded",
-            "initialized": getattr(self, '_initialized', False)
+            "initialized": getattr(self, '_initialized', False),
+            "repetition_penalty" : self.repetition_penalty,
         }
     
     def unload(self):
