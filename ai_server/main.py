@@ -101,8 +101,13 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 # 루트 엔드포인트
 @app.get("/")
-async def root():
+def root():
     return {"message": "SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하는 AI API 서버"}
+
+# 헬스체크 엔드포인트
+@app.get("/health", summary="헬스 체크", response_description="서버 상태 OK 여부 반환")
+async def health_check():
+    return JSONResponse(status_code=200, content={"status_code": 200, "status": "ok"})
 
 # 텍스트 변환 엔드포인트
 @app.post("/generate/post", 
