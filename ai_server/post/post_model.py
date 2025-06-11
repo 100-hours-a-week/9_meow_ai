@@ -33,7 +33,7 @@ class PostTransformationService:
                 prompt=formatted_prompt,
                 temperature=model.temperature,
                 top_p=model.top_p,
-                max_new_tokens=model.max_new_tokens
+                max_new_tokens=model.max_new_tokens,
             )
             
             # 결과가 없으면 원본 내용 반환

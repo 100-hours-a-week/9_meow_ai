@@ -8,6 +8,7 @@ import torch
 from typing import Optional
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from ai_server.config import get_settings
+import wandb
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ class PostModel:
     FINE_TUNED_MODEL_PATH = "haebo/Meow-HyperCLOVAX-1.5B_FullFT_fp32_0527"
     MODEL_LOAD_DTYPE = torch.float32
     MODEL_MAX_LENGTH = 1024 # HyperCLOVAX-SEED-1.5B(1/2 값)
-    MODEL_MAX_NEW_TOKENS = 150  
+    MODEL_MAX_NEW_TOKENS = 200 
     MODEL_TEMPERATURE = 0.2
     MODEL_TOP_P = 0.3 # 좀 더 낮출 필요 있을 듯 (사용할 확률 분포값)
     MODEL_REPETITION_PENALTY = 1.6 # 반복 억제 
@@ -58,6 +59,20 @@ class PostModel:
         
         logger.info(f"파인튜닝 모델 로드 완료: {self.fine_tuned_model_path}")
         self._initialized = True
+
+        # W&B 실험 추적 초기화
+        wandb.init(
+            project="meow-hyperclovax",
+            name="FullFT-v0527-0611",  # 실험 이름
+            config={
+                "model_path": self.FINE_TUNED_MODEL_PATH,
+                "max_new_tokens": self.MODEL_MAX_NEW_TOKENS,
+                "temperature": self.MODEL_TEMPERATURE,
+                "top_p": self.MODEL_TOP_P,
+                "repetition_penalty": self.MODEL_REPETITION_PENALTY,
+                "dtype": str(self.MODEL_LOAD_DTYPE),
+            }
+        )
     
     def _setup_gpu(self):
         """
@@ -111,27 +126,41 @@ class PostModel:
     def _postprocess(self, text: str) -> str:
         """
         모델 출력 후처리
-        - '### transformed_content:' 이후 콜론 다음 텍스트만 추출
-        - 감정/유형 제거, 반복 제거, 공백 정리
+        - 프롬프트 잔재 제거
+        - 반복 표현 제거
+        - 깨진 문자/비정상 이모티콘 이후 자르기
         """
         import re
 
-        # 1. "### transformed_content:" 이후 텍스트 추출
+        # 1. "### transformed_content:" 이후 텍스트만 추출
         if "### transformed_content" in text:
             match = re.search(r"### transformed_content:\s*(.*)", text, flags=re.DOTALL)
             if match:
                 text = match.group(1).strip()
 
-        # 2. 감정/유형 관련 문구 제거
-        text = re.sub(r"(### (emotion|post_type):.*?)", "", text, flags=re.DOTALL)
+        # 2. 감정/유형 등 불필요한 안내 제거
+        text = re.sub(r"(### (emotion|post_type|output):.*?)", "", text, flags=re.IGNORECASE)
 
-        # 3. 반복되는 단어 제거 (예: "냐하! 냐하! 냐하!" → "냐하!")
+        # 3. 반복되는 단어 제거
         text = re.sub(r"(\b\w+!)( \1){2,}", r"\1", text)
 
         # 4. 공백 정리
         text = re.sub(r"\s+", " ", text).strip()
 
+        # 5. 이상한 유니코드 문자 이후 자르기
+        # 허용 문자: 한글, 영어, 숫자, 이모지 일부, 특수기호
+        # 비정상 문자(U+FFF0 ~ U+FFFF, U+DC00 ~ U+DFFF 등) 필터링
+        try:
+            text = re.split(r"[\uFFF0-\uFFFF\uDC00-\uDFFF\uFFFD]", text)[0].strip()
+        except Exception:
+            pass
+
+        # 6. 마지막 마침표 또는 문장 경계 기준으로 자르기 (300자 제한)
+        if len(text) > 200:
+            text = text[:200].rsplit('.', 1)[0] + "."
+
         return text
+
 
     async def generate(
         self, 
@@ -162,13 +191,7 @@ class PostModel:
         repetition_penalty = repetition_penalty or self.repetition_penalty
         # 입력 토큰화
         inputs = self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device)
-        
-        # 동적 max_new_tokens 설정 : 출력 길이가 인풋에 비례하여 증가하도록 설정
-        default_ratio = 1.6 # 출력 / 인풋
-        max_limit = self.max_new_tokens
-        input_length = inputs.shape[1]
-        dynamic_max_new_tokens = min(int(input_length * default_ratio), max_limit)
-        max_new_tokens = dynamic_max_new_tokens or max_new_tokens
+        max_new_tokens = max_new_tokens or self.max_new_tokens
         
         # 어텐션 마스크 생성
         attention_mask = torch.ones_like(inputs)
@@ -191,6 +214,17 @@ class PostModel:
         new_tokens = outputs[0][inputs.shape[1]:]
         decoded = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
         processed_text = self._postprocess(decoded)
+
+        # W&B 로그 기록
+        wandb.log({
+            "prompt": prompt,
+            "generated_text": processed_text,
+            "output_length": len(self.tokenizer.encode(processed_text)),
+            "temperature": temperature,
+            "top_p": top_p,
+            "repetition_penalty": repetition_penalty
+        })
+        # print("processed_text:", processed_text)
         return processed_text
     
     def get_model_info(self) -> dict:
