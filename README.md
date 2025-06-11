@@ -1,5 +1,6 @@
 # AI Text Transformation Server
 
+http://34.64.213.48:8000
 SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하는 AI API 서버입니다.
 
 ## 기능
@@ -78,6 +79,11 @@ python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --proxy-headers
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
+4. W&B 모니터링 활성화 (optional)
+- $ export USE_WANDB=true
+- $ wandb login
+- W&B API Key 입력
+
 ## API 사용 방법
 
 ### 텍스트 변환 API
@@ -114,24 +120,28 @@ python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --proxy-headers
 
 ```
 9_meow_ai/
-├── .github/                    # GitHub 관련 설정
-├── .venv/                      # Python 가상환경
-├── ai_server/                  # 메인 서버 코드
-│   ├── __init__.py            # 패키지 초기화 파일
-│   ├── config.py              # 환경 설정 관리
-│   ├── key_manager.py         # API 키 풀 관리
-│   ├── main.py                # FastAPI 메인 애플리케이션
-│   ├── comment/               # 댓글 변환 관련 모듈
-│   │   ├── comment_model.py   # 댓글 변환 서비스
-│   │   ├── comment_prompt.py  # 댓글 프롬프트 생성기
-│   │   └── comment_schemas.py # 댓글 관련 스키마
-│   └── post/                  # 포스트 변환 관련 모듈
-│       ├── post_model.py      # 포스트 변환 서비스
-│       ├── post_prompt.py     # 포스트 프롬프트 생성기
-│       └── post_schemas.py    # 포스트 관련 스키마
-├── .gitignore                 # Git 무시 파일 목록
-├── README.md                  # 프로젝트 문서
-└── requirements.txt           # Python 패키지 의존성
+├── .github/                       # GitHub 관련 설정
+├── .venv/                         # Python 가상환경
+├── ai_server/                     # 메인 서버 코드
+│   ├── __init__.py                # 패키지 초기화 파일
+│   ├── config.py                  # 환경 설정 관리
+│   ├── key_manager.py             # API 키 풀 관리
+│   ├── main.py                    # FastAPI 메인 애플리케이션
+│   ├── comment/                   # 댓글 변환 관련 모듈
+│   │   ├── comment_model.py       # 댓글 변환 서비스
+│   │   ├── comment_prompt.py      # 댓글 프롬프트 생성기
+│   │   └── comment_schemas.py     # 댓글 관련 스키마
+│   ├── models/                    # 모델 관련 모듈
+│   │   ├── huggingface_model.py   # Hugging Face 모델을 사용한 변환 서비스
+│   │   ├── model_manager.py       # 모델 관리 및 프롬프트 생성기
+│   │   └── __init__.py            # 패키지 초기화 파일
+│   └── post/                      # 포스트 변환 관련 모듈
+│       ├── post_model.py          # 포스트 변환 서비스
+│       ├── post_prompt.py         # 포스트 프롬프트 생성기
+│       └── post_schemas.py        # 포스트 관련 스키마
+├── .gitignore                     # Git 무시 파일 목록
+├── README.md                      # 프로젝트 문서
+└── requirements.txt               # Python 패키지 의존성
 ```
 
 ## 성능 최적화
