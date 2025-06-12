@@ -8,7 +8,7 @@ import torch
 from typing import Optional
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from ai_server.config import get_settings
-import wandb
+# import wandb
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
@@ -60,19 +60,19 @@ class PostModel:
         logger.info(f"파인튜닝 모델 로드 완료: {self.fine_tuned_model_path}")
         self._initialized = True
 
-        # W&B 실험 추적 초기화
-        wandb.init(
-            project="meow-hyperclovax",
-            name="FullFT-v0527-0611",  # 실험 이름
-            config={
-                "model_path": self.FINE_TUNED_MODEL_PATH,
-                "max_new_tokens": self.MODEL_MAX_NEW_TOKENS,
-                "temperature": self.MODEL_TEMPERATURE,
-                "top_p": self.MODEL_TOP_P,
-                "repetition_penalty": self.MODEL_REPETITION_PENALTY,
-                "dtype": str(self.MODEL_LOAD_DTYPE),
-            }
-        )
+        # # W&B 실험 추적 초기화
+        # wandb.init(
+        #     project="meow-hyperclovax",
+        #     name="FullFT-v0527-0611",  # 실험 이름
+        #     config={
+        #         "model_path": self.FINE_TUNED_MODEL_PATH,
+        #         "max_new_tokens": self.MODEL_MAX_NEW_TOKENS,
+        #         "temperature": self.MODEL_TEMPERATURE,
+        #         "top_p": self.MODEL_TOP_P,
+        #         "repetition_penalty": self.MODEL_REPETITION_PENALTY,
+        #         "dtype": str(self.MODEL_LOAD_DTYPE),
+        #     }
+        # )
     
     def _setup_gpu(self):
         """
@@ -215,15 +215,15 @@ class PostModel:
         decoded = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
         processed_text = self._postprocess(decoded)
 
-        # W&B 로그 기록
-        wandb.log({
-            "prompt": prompt,
-            "generated_text": processed_text,
-            "output_length": len(self.tokenizer.encode(processed_text)),
-            "temperature": temperature,
-            "top_p": top_p,
-            "repetition_penalty": repetition_penalty
-        })
+        # # W&B 로그 기록
+        # wandb.log({
+        #     "prompt": prompt,
+        #     "generated_text": processed_text,
+        #     "output_length": len(self.tokenizer.encode(processed_text)),
+        #     "temperature": temperature,
+        #     "top_p": top_p,
+        #     "repetition_penalty": repetition_penalty
+        # })
         # print("processed_text:", processed_text)
         return processed_text
     
