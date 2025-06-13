@@ -18,7 +18,7 @@ class PostModel:
     풀파인튜닝된 Meow-HyperCLOVAX 모델을 로드하고 관리하는 클래스 (T4 GPU 전용)
     """
     # 풀파인튜닝 모델 경로 및 파라미터 정의
-    FINE_TUNED_MODEL_PATH = "haebo/Meow-HyperCLOVAX-1.5B_FullFT_fp32_0527"
+    FINE_TUNED_MODEL_PATH = "haebo/Meow-HyperCLOVAX-1.5B_FullFT_fp32_0527f"
     MODEL_LOAD_DTYPE = torch.float32
     MODEL_MAX_LENGTH = 1024 # HyperCLOVAX-SEED-1.5B(1/2 값)
     MODEL_MAX_NEW_TOKENS = 200 
@@ -123,43 +123,85 @@ class PostModel:
         
         logger.info("풀파인튜닝 모델과 토크나이저 로드 완료")
     
-    def _postprocess(self, text: str) -> str:
-        """
-        모델 출력 후처리
-        - 프롬프트 잔재 제거
-        - 반복 표현 제거
-        - 깨진 문자/비정상 이모티콘 이후 자르기
-        """
+    def _postprocess(self, text: str, original_content: str = "") -> str:
         import re
+        from collections import Counter
 
-        # 1. "### transformed_content:" 이후 텍스트만 추출
-        if "### transformed_content" in text:
-            match = re.search(r"### transformed_content:\s*(.*)", text, flags=re.DOTALL)
-            if match:
-                text = match.group(1).strip()
+        EMOJI_PATTERN = (
+            "[" +
+            "\U0001F600-\U0001F64F"
+            "\U0001F300-\U0001F5FF"
+            "\U0001F680-\U0001F6FF"
+            "\U0001F1E0-\U0001F1FF"
+            "\U00002700-\U000027BF"
+            "\U0001F900-\U0001F9FF"
+            "\U00002600-\U000026FF"
+            "]"
+        )
 
-        # 2. 감정/유형 등 불필요한 안내 제거
-        text = re.sub(r"(### (emotion|post_type|output):.*?)", "", text, flags=re.IGNORECASE)
+        # transformed_content 포맷 제거
+        text = re.sub(r"### transformed_content:\s*", "", text).strip()
 
-        # 3. 반복되는 단어 제거
-        text = re.sub(r"(\b\w+!)( \1){2,}", r"\1", text)
+        # 줄바꿈 및 백슬래시 제거
+        text = re.sub(r'(\\r\\n|\\r|\\n|\r|\n)', '', text)
 
-        # 4. 공백 정리
-        text = re.sub(r"\s+", " ", text).strip()
+        # 해시태그 제거
+        text = re.sub(r'#\S+', '', text)
 
-        # 5. 이상한 유니코드 문자 이후 자르기
-        # 허용 문자: 한글, 영어, 숫자, 이모지 일부, 특수기호
-        # 비정상 문자(U+FFF0 ~ U+FFFF, U+DC00 ~ U+DFFF 등) 필터링
-        try:
-            text = re.split(r"[\uFFF0-\uFFFF\uDC00-\uDFFF\uFFFD]", text)[0].strip()
-        except Exception:
-            pass
+        # 이모지 연속 제거
+        text = re.sub(f"({EMOJI_PATTERN}){EMOJI_PATTERN}+", r"\1", text)
 
-        # 6. 마지막 마침표 또는 문장 경계 기준으로 자르기 (300자 제한)
-        if len(text) > 200:
-            text = text[:200].rsplit('.', 1)[0] + "."
+        # 이모지 2개 초과 시 앞의 2개만 남기고 제거
+        emojis = re.findall(EMOJI_PATTERN, text)
+        if len(emojis) > 2:
+            keep = emojis[:2]
+            text = re.sub(EMOJI_PATTERN, '', text) + ''.join(keep)
 
-        return text
+        # 기호나 감탄사 반복 (ex. ! ! ! ...) 압축
+        text = re.sub(r'([!?\.💢❤⭐✨🐾…]{1})( \1|\1){2,}', r'\1\1', text)
+
+        # 특수문자/비정상 문자 제거
+        text = re.sub(r"[️‹›／]", '', text)
+
+        # 동일 단어 반복 축소
+        words = re.findall(r'\b\w+\b', text)
+        counts = Counter(words)
+        for word, count in counts.items():
+            if count >= 4:
+                text = re.sub(rf'\b({re.escape(word)})\b', '', text, count - 2)
+
+        # 금지어 제거
+        for word in ['system', '안올라간다']:
+            text = text.replace(word, '')
+
+        # 비정상적으로 끊긴 문장 정리
+        text = re.sub(r'([가-힣a-zA-Z])\s*\.+\s*$', r'\1.', text)
+        text = re.sub(r'\.\.+', '.', text)
+
+        # 너무 짧거나 의미 없는 문장 제거
+        if len(text) < 5 or re.fullmatch(r'[\W\d\s]+', text):
+            return "[출력 오류] 결과 생성이 실패했어요."
+
+        # 길이 제한
+        if original_content:
+            # 길이 조건 별 최대 길이 설정
+            original_len = len(original_content)
+            if original_len <= 30:
+                max_len = int(3.0 * original_len)
+            else: 
+                max_len = int(2.0 * original_len)
+
+            if len(text) > max_len:
+                # 공백 기준으로 자르고, 초과 부분을 버림
+                words = text.split()
+                trimmed_text = ""
+                for word in words:
+                    if len(trimmed_text) + len(word) + 1 > max_len:
+                        break
+                    trimmed_text += word + " "
+                text = trimmed_text.strip()
+
+        return re.sub(r'\s+', ' ', text).strip()
 
 
     async def generate(
@@ -169,6 +211,7 @@ class PostModel:
         temperature: Optional[float] = None,
         top_p: Optional[float] = None,
         repetition_penalty: Optional[float] = None,
+        original_content: Optional[str] = str,
         **kwargs
     ) -> str:
         """
@@ -189,6 +232,7 @@ class PostModel:
         temperature = temperature or self.temperature
         top_p = top_p or self.top_p
         repetition_penalty = repetition_penalty or self.repetition_penalty
+
         # 입력 토큰화
         inputs = self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device)
         max_new_tokens = max_new_tokens or self.max_new_tokens
@@ -213,7 +257,7 @@ class PostModel:
         # 새로 생성된 토큰만 디코딩 (입력 제외)
         new_tokens = outputs[0][inputs.shape[1]:]
         decoded = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
-        processed_text = self._postprocess(decoded)
+        processed_text = self._postprocess(decoded, original_content)
 
         # # W&B 로그 기록
         # wandb.log({
