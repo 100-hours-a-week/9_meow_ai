@@ -10,23 +10,6 @@ SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하는 AI API
 - FastAPI 기반의 RESTful API 제공
 - API 키 풀링을 통한 처리량 최적화
 
-## 기술 스택
-
-- Python 3.12.9
-- FastAPI 0.109.2
-- Uvicorn 0.27.1
-- LangChain 0.1.9
-- Google Generative AI 0.4.1
-- Google AI Generative Language 0.4.0
-- LangChain Google GenAI 0.0.11
-- LangChain Core 0.1.53
-- LangChain Community 0.0.38
-- Pydantic 2.11.4
-- Python-dotenv 1.0.1
-- Jinja2 3.1.3
-- SQLAlchemy 2.0.40
-- Starlette 0.36.3
-
 ## 설치 방법
 
 1. 저장소 클론

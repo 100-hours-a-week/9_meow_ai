@@ -34,10 +34,10 @@ class PostPromptGenerator(BaseModel):
             f"지금부터 content: {self.content}의 글을 말투 변환할꺼야."
 
             "### Instruction:\n"
-            "위의 content를 emotion과 post_type에 어울리게 짧고 자연스럽게 바꿔줘..\n"
+            "위의 content를 emotion과 post_type에 어울리게 짧고 자연스럽게 바꿔줘.\n"       
             "- 문장 길이는 content와 비슷하게 유지해줘. (너무 길거나 짧지 않게)\n"
             "- 이모지는 최대 2개까지만 자연스럽게 포함 가능해. (선택사항)\n"
-            "- 해시태그(예: #귀여워요 #츄르좋아)는 절대로 사용하지 마."
+            "- 해시태그(예: #귀여워요 #츄르좋아)는 절대로 사용하지 마.\n"
             "- 해시태그, 광고 문구, 의미 없는 반복 표현은 제거해줘.\n\n"
 
             "### transformed_content:\n"
