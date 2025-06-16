@@ -180,8 +180,8 @@ class PostModel:
 
         # 길이 제한
         if original_content:
-                max_chars = min(len(text), 300)
-                threshold = min(int(len(original_content) * 2.0), max_chars)
+                max_chars = min(len(text), 400)
+                threshold = min(int(len(original_content) * 3.0), max_chars)
 
                 snippet = text[:threshold]
 
