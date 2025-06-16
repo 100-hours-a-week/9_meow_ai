@@ -18,7 +18,7 @@ class PostModel:
     풀파인튜닝된 Meow-HyperCLOVAX 모델을 로드하고 관리하는 클래스 (T4 GPU 전용)
     """
     # 풀파인튜닝 모델 경로 및 파라미터 정의
-    FINE_TUNED_MODEL_PATH = "haebo/Meow-HyperCLOVAX-1.5B_FullFT_fp32_0527f"
+    FINE_TUNED_MODEL_PATH = "haebo/Meow-HyperCLOVAX-1.5B_FullFT_fp32_0615i"
     MODEL_LOAD_DTYPE = torch.float32
     MODEL_MAX_LENGTH = 1024 # HyperCLOVAX-SEED-1.5B(1/2 값)
     MODEL_MAX_NEW_TOKENS = 200 
@@ -59,20 +59,6 @@ class PostModel:
         
         logger.info(f"파인튜닝 모델 로드 완료: {self.fine_tuned_model_path}")
         self._initialized = True
-
-        # # W&B 실험 추적 초기화
-        # wandb.init(
-        #     project="meow-hyperclovax",
-        #     name="FullFT-v0527-0611",  # 실험 이름
-        #     config={
-        #         "model_path": self.FINE_TUNED_MODEL_PATH,
-        #         "max_new_tokens": self.MODEL_MAX_NEW_TOKENS,
-        #         "temperature": self.MODEL_TEMPERATURE,
-        #         "top_p": self.MODEL_TOP_P,
-        #         "repetition_penalty": self.MODEL_REPETITION_PENALTY,
-        #         "dtype": str(self.MODEL_LOAD_DTYPE),
-        #     }
-        # )
     
     def _setup_gpu(self):
         """
@@ -128,19 +114,26 @@ class PostModel:
         from collections import Counter
 
         EMOJI_PATTERN = (
-            "[" +
-            "\U0001F600-\U0001F64F"
-            "\U0001F300-\U0001F5FF"
-            "\U0001F680-\U0001F6FF"
-            "\U0001F1E0-\U0001F1FF"
-            "\U00002700-\U000027BF"
-            "\U0001F900-\U0001F9FF"
-            "\U00002600-\U000026FF"
+            "["
+            "\U0001F600-\U0001F64F"  # Emoticons
+            "\U0001F300-\U0001F5FF"  # Misc Symbols and Pictographs
+            "\U0001F680-\U0001F6FF"  # Transport & Map Symbols
+            "\U0001F1E0-\U0001F1FF"  # Regional Indicator Symbols
+            "\U00002700-\U000027BF"  # Dingbats
+            "\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
+            "\U00002600-\U000026FF"  # Misc Symbols
+            "\U0001FA70-\U0001FAFF"  # Symbols and Pictographs Extended-A (추가)
+            "\U0001F700-\U0001F77F"  # Alchemical Symbols (추가)
+            "\U0001F780-\U0001F7FF"  # Geometric Shapes Extended (추가)
+            "\U0001F800-\U0001F8FF"  # Supplemental Arrows-C (추가)
+            "\U00002300-\U000023FF"  # Misc Technical (추가)
             "]"
         )
 
-        # transformed_content 포맷 제거
+        # content 응답 포맷 제거
         text = re.sub(r"### transformed_content:\s*", "", text).strip()
+        text = re.sub(r"### Output:\s*", "", text).strip()
+
 
         # 줄바꿈 및 백슬래시 제거
         text = re.sub(r'(\\r\\n|\\r|\\n|\r|\n)', '', text)
@@ -163,6 +156,9 @@ class PostModel:
         # 특수문자/비정상 문자 제거
         text = re.sub(r"[️‹›／]", '', text)
 
+        # '‍⬛' (zero width joiner + black large square) 제거
+        text = re.sub(r'[\u200b\u200c\u200d\u2060\ufeff\u202a-\u202e\u00ad\u034f]', '', text)
+
         # 동일 단어 반복 축소
         words = re.findall(r'\b\w+\b', text)
         counts = Counter(words)
@@ -171,7 +167,7 @@ class PostModel:
                 text = re.sub(rf'\b({re.escape(word)})\b', '', text, count - 2)
 
         # 금지어 제거
-        for word in ['system', '안올라간다']:
+        for word in ['system']:
             text = text.replace(word, '')
 
         # 비정상적으로 끊긴 문장 정리
@@ -184,22 +180,17 @@ class PostModel:
 
         # 길이 제한
         if original_content:
-            # 길이 조건 별 최대 길이 설정
-            original_len = len(original_content)
-            if original_len <= 30:
-                max_len = int(3.0 * original_len)
-            else: 
-                max_len = int(2.0 * original_len)
+                max_chars = min(len(text), 400)
+                threshold = min(int(len(original_content) * 3.0), max_chars)
 
-            if len(text) > max_len:
-                # 공백 기준으로 자르고, 초과 부분을 버림
-                words = text.split()
-                trimmed_text = ""
-                for word in words:
-                    if len(trimmed_text) + len(word) + 1 > max_len:
-                        break
-                    trimmed_text += word + " "
-                text = trimmed_text.strip()
+                snippet = text[:threshold]
+
+                # find the last ., !, or ? to end naturally
+                m = re.search(r'[\.!?](?=[^\.!?]*$)', snippet)
+                if m:
+                    text = snippet[:m.end()]
+                else:
+                    text = snippet.rstrip()
 
         return re.sub(r'\s+', ' ', text).strip()
 
@@ -237,8 +228,9 @@ class PostModel:
         inputs = self.tokenizer.encode(prompt, return_tensors="pt").to(self.model.device)
         max_new_tokens = max_new_tokens or self.max_new_tokens
         
-        # 어텐션 마스크 생성
+        # 어텐션 마스크 생성 (입력 마스킹 처리 해야 할때 사용 - 현재는 필요 없음)
         attention_mask = torch.ones_like(inputs)
+
         # 텍스트 생성
         with torch.no_grad():
             outputs = self.model.generate(
@@ -259,16 +251,6 @@ class PostModel:
         decoded = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
         processed_text = self._postprocess(decoded, original_content)
 
-        # # W&B 로그 기록
-        # wandb.log({
-        #     "prompt": prompt,
-        #     "generated_text": processed_text,
-        #     "output_length": len(self.tokenizer.encode(processed_text)),
-        #     "temperature": temperature,
-        #     "top_p": top_p,
-        #     "repetition_penalty": repetition_penalty
-        # })
-        # print("processed_text:", processed_text)
         return processed_text
     
     def get_model_info(self) -> dict:
