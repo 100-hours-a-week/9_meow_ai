@@ -21,7 +21,7 @@ class ModelManager:
     _lock = threading.Lock()
     
     # 모델 로딩 설정 직접 정의
-    PRELOAD_MODELS = True
+    PRELOAD_MODELS = False  # GPU 메모리 절약을 위해 비활성화
     
     def __new__(cls):
         """싱글톤 패턴 구현"""

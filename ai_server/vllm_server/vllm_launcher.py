@@ -33,7 +33,16 @@ class VLLMLauncher:
         
     def validate_model_path(self) -> bool:
         """모델 경로 유효성 검사"""
-        model_path = Path(self.config.model_path)
+        model_path_str = self.config.model_path
+        
+        # 허깅페이스 모델 이름 형식 체크 (org/model-name)
+        if "/" in model_path_str and not model_path_str.startswith("./") and not model_path_str.startswith("/"):
+            logger.info(f"허깅페이스 모델 이름 감지: {model_path_str}")
+            logger.info("vLLM이 자동으로 모델을 다운로드합니다.")
+            return True
+        
+        # 로컬 경로 체크
+        model_path = Path(model_path_str)
         if not model_path.exists():
             logger.error(f"모델 경로를 찾을 수 없습니다: {model_path}")
             return False

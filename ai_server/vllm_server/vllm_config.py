@@ -4,7 +4,7 @@ HyperCLOVAX-1.5B_LoRA_fp16 모델을 위한 설정
 """
 
 import os
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 
@@ -23,8 +23,15 @@ class VLLMConfig(BaseSettings):
     )
     model_path: str = Field(
         default="./models/HyperCLOVAX-1.5B_LoRA_fp16",
-        description="모델 파일 경로"
+        description="base 모델 경로"
     )
+    
+    # LoRA 관련 설정
+    enable_lora: bool = Field(default=False, description="LoRA 활성화")
+    base_model_path: Optional[str] = Field(default=None, description="LoRA의 베이스 모델 경로")
+    lora_modules: Optional[List[str]] = Field(default=None, description="LoRA 모듈 목록")
+    max_loras: int = Field(default=1, description="최대 LoRA 수")
+    max_lora_rank: int = Field(default=16, description="최대 LoRA 랭크")
     
     # GPU 및 메모리 설정
     tensor_parallel_size: int = Field(default=1, description="텐서 병렬 처리 크기")
@@ -53,7 +60,7 @@ class VLLMConfig(BaseSettings):
         case_sensitive = False
 
 
-class VLLMServerArgs(BaseModel):
+class VLLMServerArgs:
     """vLLM 서버 실행 인자 생성"""
     
     def __init__(self, config: VLLMConfig):
@@ -61,10 +68,13 @@ class VLLMServerArgs(BaseModel):
     
     def get_server_args(self) -> list[str]:
         """vLLM 서버 실행을 위한 명령행 인자 생성"""
+        # LoRA 모드인 경우 base 모델 사용, 아니면 일반 모델 사용
+        model_path = self.config.base_model_path if self.config.enable_lora else self.config.model_path
+        
         args = [
             "--host", self.config.host,
             "--port", str(self.config.port),
-            "--model", self.config.model_path,
+            "--model", model_path,
             "--served-model-name", self.config.served_model_name,
             "--tensor-parallel-size", str(self.config.tensor_parallel_size),
             "--gpu-memory-utilization", str(self.config.gpu_memory_utilization),
@@ -72,6 +82,19 @@ class VLLMServerArgs(BaseModel):
             "--max-num-batched-tokens", str(self.config.max_num_batched_tokens),
             "--max-num-seqs", str(self.config.max_num_seqs),
         ]
+        
+        # LoRA 관련 인자 추가
+        if self.config.enable_lora:
+            args.extend([
+                "--enable-lora",
+                "--max-loras", str(self.config.max_loras),
+                "--max-lora-rank", str(self.config.max_lora_rank),
+            ])
+            
+            # LoRA 모듈 지정
+            if self.config.lora_modules:
+                for lora_module in self.config.lora_modules:
+                    args.extend(["--lora-modules", lora_module])
         
         if self.config.enable_chunked_prefill:
             args.append("--enable-chunked-prefill")

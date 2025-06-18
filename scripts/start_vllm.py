@@ -21,7 +21,12 @@ def main():
     parser = argparse.ArgumentParser(description="vLLM 서버 시작")
     parser.add_argument("--model-path", 
                        default="./models/haebo/Meow-HyperCLOVAX-1.5B_LoRA_fp16_0527",
-                       help="모델 파일 경로")
+                       help="LoRA 어댑터 경로")
+    parser.add_argument("--base-model", 
+                       default=None,
+                       help="베이스 모델 경로 (LoRA 사용시 필수)")
+    parser.add_argument("--enable-lora", action="store_true",
+                       help="LoRA 모드 활성화")
     parser.add_argument("--port", type=int, default=8001, help="서버 포트")
     parser.add_argument("--host", default="0.0.0.0", help="서버 호스트")
     parser.add_argument("--gpu-memory-utilization", type=float, default=0.8,
@@ -33,25 +38,53 @@ def main():
     
     args = parser.parse_args()
     
-    # 설정 업데이트
-    update_vllm_config(
-        model_path=args.model_path,
-        port=args.port,
-        host=args.host,
-        gpu_memory_utilization=args.gpu_memory_utilization,
-        max_model_len=args.max_model_len,
-        tensor_parallel_size=args.tensor_parallel_size
-    )
+    # LoRA 설정 처리
+    if args.enable_lora:
+        if not args.base_model:
+            print("❌ LoRA 모드에서는 --base-model이 필수입니다.")
+            sys.exit(1)
+        
+        # LoRA 설정 업데이트
+        update_vllm_config(
+            enable_lora=True,
+            base_model_path=args.base_model,
+            lora_modules=[f"lora={args.model_path}"],
+            model_path=args.model_path,  # LoRA 어댑터 경로
+            port=args.port,
+            host=args.host,
+            gpu_memory_utilization=args.gpu_memory_utilization,
+            max_model_len=args.max_model_len,
+            tensor_parallel_size=args.tensor_parallel_size
+        )
+        
+        print("=" * 60)
+        print("vLLM 서버 시작 중... (LoRA 모드)")
+        print(f"베이스 모델: {args.base_model}")
+        print(f"LoRA 어댑터: {args.model_path}")
+        print(f"서버: {args.host}:{args.port}")
+        print(f"GPU 메모리 사용률: {args.gpu_memory_utilization * 100:.1f}%")
+        print("=" * 60)
+    else:
+        # 일반 모델 설정 업데이트
+        update_vllm_config(
+            enable_lora=False,
+            model_path=args.model_path,
+            port=args.port,
+            host=args.host,
+            gpu_memory_utilization=args.gpu_memory_utilization,
+            max_model_len=args.max_model_len,
+            tensor_parallel_size=args.tensor_parallel_size
+        )
+        
+        print("=" * 60)
+        print("vLLM 서버 시작 중...")
+        print(f"모델: {args.model_path}")
+        print(f"서버: {args.host}:{args.port}")
+        print(f"GPU 메모리 사용률: {args.gpu_memory_utilization * 100:.1f}%")
+        print("=" * 60)
     
     # vLLM 서버 시작
     launcher = VLLMLauncher()
-    
-    print("=" * 60)
-    print("vLLM 서버 시작 중...")
-    print(f"모델: {args.model_path}")
-    print(f"서버: {args.host}:{args.port}")
-    print(f"GPU 메모리 사용률: {args.gpu_memory_utilization * 100:.1f}%")
-    print("=" * 60)
     
     try:
         success = launcher.start_server()
