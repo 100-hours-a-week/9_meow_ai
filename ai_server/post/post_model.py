@@ -1,19 +1,17 @@
-import aiohttp
-import json
 from ai_server.post.post_schemas import Emotion, PostType
 from ai_server.post.post_prompt import PostPromptGenerator
+from ai_server.vLLM_client.vllm_client import VLLMAsyncClient, CompletionRequest
 import logging
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-# post 변환 서비스(vLLM 서버 사용)
+# post 변환 서비스
 class PostTransformationService:
     def __init__(self, vllm_base_url: str = "http://localhost:8001"):
         self.vllm_base_url = vllm_base_url
-        self.vllm_endpoint = f"{vllm_base_url}/v1/completions"
         
-    # post 변환 서비스 메서드(포스트 변환)
+    # post 변환 서비스 메서드
     async def transform_post(self, content: str, emotion: Emotion, post_type: PostType) -> str:
         try:
             # 1. 프롬프트 생성기 통해 텍스트 프롬프트 생성
@@ -24,33 +22,24 @@ class PostTransformationService:
             )
             formatted_prompt = prompt_generator.get_formatted_prompt()
 
-            # 2. vLLM 서버에 요청
-            async with aiohttp.ClientSession() as session:
-                payload = {
-                    "model": "HyperCLOVAX-1.5B_LoRA_fp16",
-                    "prompt": formatted_prompt,
-                    "max_tokens": 200,
-                    "temperature": 0.2,
-                    "top_p": 0.3,
-                    "repetition_penalty": 1.6,
-                    "stop": ["</s>", "<|endoftext|>"]
-                }
+            # 2. VLLMAsyncClient를 사용하여 vLLM 서버에 요청
+            async with VLLMAsyncClient(base_url=self.vllm_base_url) as client:
+                completion_request = CompletionRequest(
+                    prompt=formatted_prompt,
+                    max_tokens=200,
+                    temperature=0.2,
+                    top_p=0.3,
+                    frequency_penalty=0.0,
+                    presence_penalty=0.0,
+                    stop=["</s>", "<|endoftext|>"]
+                )
                 
-                async with session.post(
-                    self.vllm_endpoint,
-                    json=payload,
-                    headers={"Content-Type": "application/json"}
-                ) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        generated_text = result["choices"][0]["text"].strip()
-                        
-                        # 후처리
-                        processed_text = self._postprocess(generated_text, content)
-                        return processed_text
-                    else:
-                        logger.error(f"vLLM 서버 오류: {response.status}")
-                        return content
+                result = await client.completion(completion_request)
+                generated_text = result["choices"][0]["text"].strip()
+                
+                # 후처리
+                processed_text = self._postprocess(generated_text, content)
+                return processed_text
 
         except Exception as e:
             logger.error(f"포스트 변환 실패: {str(e)}")

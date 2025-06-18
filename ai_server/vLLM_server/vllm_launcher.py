@@ -198,13 +198,51 @@ class VLLMLauncher:
             "running": False,
             "pid": None,
             "config": self.config.dict(),
+            "memory_usage": None,
+            "gpu_info": None
         }
         
         if self.process:
             status["running"] = self.process.poll() is None
             status["pid"] = self.process.pid
+            
+            # GPU 메모리 사용량 확인
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    memory_allocated = torch.cuda.memory_allocated(0) / 1024**3
+                    memory_total = torch.cuda.get_device_properties(0).total_memory / 1024**3
+                    status["gpu_info"] = {
+                        "사용 메모리": round(memory_allocated, 2),
+                        "총 메모리": round(memory_total, 2),
+                        "메모리 사용률": round((memory_allocated / memory_total) * 100, 1)
+                    }
+            except Exception as e:
+                logger.warning(f"GPU 메모리 정보 조회 실패: {e}")
         
         return status
+    
+    def cleanup_resources(self) -> bool:
+        """리소스 정리 및 메모리 해제"""
+        try:
+            if self.process and self.process.poll() is None:
+                logger.info("서버 프로세스를 정리합니다...")
+                self.stop_server()
+            
+            # GPU 메모리 정리
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                    torch.cuda.synchronize()
+                    logger.info("GPU 메모리 캐시가 정리되었습니다.")
+            except Exception as e:
+                logger.warning(f"GPU 메모리 정리 실패: {e}")
+            
+            return True
+        except Exception as e:
+            logger.error(f"리소스 정리 실패: {e}")
+            return False
 
 
 def main():

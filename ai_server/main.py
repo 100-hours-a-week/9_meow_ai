@@ -8,8 +8,6 @@ from ai_server.post.post_schemas import PostRequest, PostResponse
 from ai_server.comment.comment_model import CommentTransformationService
 from ai_server.comment.comment_schemas import CommentRequest, CommentResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from ai_server.models.model_manager import get_model_manager
-from contextlib import asynccontextmanager
 import logging
 
 # 로깅 설정
@@ -18,28 +16,11 @@ logger = logging.getLogger(__name__)
 # API 키 풀 초기화
 key_pool = initialize_key_pool()
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """서버 시작/종료 시 실행되는 lifespan 컨텍스트 매니저"""
-    # 서버 시작
-    logger.info("서버 시작: 모델 로드 시작")
-    model_manager = get_model_manager()
-    model_manager.initialize_models()
-    logger.info("서버 시작: 모델 로드 완료")
-    
-    yield
-    
-    # 서버 종료
-    logger.info("서버 종료: 모델 리소스 정리 시작...")
-    model_manager.cleanup()
-    logger.info("서버 종료: 모델 리소스 정리 완료")
-
 # FastAPI 앱 초기화
 app = FastAPI(
     title="AI Text Transformation Server",
     description="SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하는 AI API 서버",
-    version="0.1.0",
-    lifespan=lifespan
+    version="0.1.0"
 )
 
 # CORS 설정
