@@ -1,6 +1,6 @@
 """
 vLLM 서버 런처
-HyperCLOVAX-1.5B_LoRA_fp16 모델을 위한 vLLM 서버 시작 및 관리
+포스트 문장 생성을 위한 간소화된 vLLM 서버 시작 및 관리
 """
 
 import os
@@ -9,7 +9,7 @@ import subprocess
 import signal
 import time
 import logging
-from typing import Optional, List
+from typing import Optional
 from pathlib import Path
 
 from .vllm_config import VLLMConfig, VLLMServerArgs, get_vllm_config
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class VLLMLauncher:
-    """vLLM 서버 런처 클래스"""
+    """vLLM 서버 런처 클래스 - 포스트 생성 최적화"""
     
     def __init__(self, config: Optional[VLLMConfig] = None):
         self.config = config or get_vllm_config()
@@ -35,10 +35,9 @@ class VLLMLauncher:
         """모델 경로 유효성 검사"""
         model_path_str = self.config.model_path
         
-        # 허깅페이스 모델 이름 형식 체크 (org/model-name)
+        # 허깅페이스 모델 이름 형식 체크
         if "/" in model_path_str and not model_path_str.startswith("./") and not model_path_str.startswith("/"):
-            logger.info(f"허깅페이스 모델 이름 감지: {model_path_str}")
-            logger.info("vLLM이 자동으로 모델을 다운로드합니다.")
+            logger.info(f"허깅페이스 모델 감지: {model_path_str}")
             return True
         
         # 로컬 경로 체크
@@ -47,65 +46,28 @@ class VLLMLauncher:
             logger.error(f"모델 경로를 찾을 수 없습니다: {model_path}")
             return False
         
-        # 모델 파일들 확인
-        required_files = ["config.json", "pytorch_model.bin", "tokenizer.json"]
-        missing_files = []
-        
-        for file_name in required_files:
-            if not (model_path / file_name).exists():
-                missing_files.append(file_name)
-        
-        if missing_files:
-            logger.warning(f"일부 모델 파일이 누락되었습니다: {missing_files}")
-            logger.info("vLLM이 자동으로 처리할 수 있는 경우가 있습니다.")
-        
         return True
     
-    def check_gpu_availability(self) -> bool:
-        """GPU 사용 가능성 확인"""
-        try:
-            import torch
-            if torch.cuda.is_available():
-                gpu_count = torch.cuda.device_count()
-                logger.info(f"사용 가능한 GPU 수: {gpu_count}")
-                
-                for i in range(gpu_count):
-                    gpu_name = torch.cuda.get_device_name(i)
-                    memory_total = torch.cuda.get_device_properties(i).total_memory / 1024**3
-                    logger.info(f"GPU {i}: {gpu_name}, 메모리: {memory_total:.1f}GB")
-                
-                return gpu_count >= self.config.tensor_parallel_size
-            else:
-                logger.warning("CUDA를 사용할 수 없습니다. CPU 모드로 실행됩니다.")
-                return False
-        except ImportError:
-            logger.error("PyTorch가 설치되지 않았습니다.")
-            return False
-    
     def start_server(self) -> bool:
-        """vLLM 서버 시작"""
+        """vLLM 서버 시작 - 포스트 생성 최적화"""
         if self.process and self.process.poll() is None:
             logger.warning("vLLM 서버가 이미 실행 중입니다.")
             return True
         
-        # 사전 검사
         if not self.validate_model_path():
             return False
-        
-        self.check_gpu_availability()
         
         # 서버 실행 명령 구성
         cmd = ["python", "-m", "vllm.entrypoints.openai.api_server"] + self.server_args.get_server_args()
         
-        logger.info("vLLM 서버를 시작합니다...")
+        logger.info("포스트 생성용 vLLM 서버를 시작합니다...")
         logger.info(f"실행 명령: {' '.join(cmd)}")
         
         try:
             # 환경 변수 설정
             env = os.environ.copy()
             env.update({
-                "CUDA_VISIBLE_DEVICES": "0",  # 첫 번째 GPU 사용
-                "VLLM_ATTENTION_BACKEND": "FLASH_ATTN",  # Flash Attention 사용
+                "CUDA_VISIBLE_DEVICES": "0",
             })
             
             self.process = subprocess.Popen(
@@ -113,20 +75,18 @@ class VLLMLauncher:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env=env,
-                preexec_fn=os.setsid  # 프로세스 그룹 생성
+                preexec_fn=os.setsid
             )
             
             logger.info(f"vLLM 서버가 시작되었습니다. PID: {self.process.pid}")
-            
-            # 서버 시작 대기
             return self._wait_for_server_ready()
             
         except Exception as e:
             logger.error(f"vLLM 서버 시작 실패: {e}")
             return False
     
-    def _wait_for_server_ready(self, timeout: int = 300) -> bool:
-        """서버 준비 상태 대기"""
+    def _wait_for_server_ready(self, timeout: int = 180) -> bool:
+        """서버 준비 상태 대기 - 포스트 생성용으로 단축"""
         import requests
         
         url = f"http://{self.config.host}:{self.config.port}/v1/models"
@@ -142,12 +102,12 @@ class VLLMLauncher:
             try:
                 response = requests.get(url, timeout=5)
                 if response.status_code == 200:
-                    logger.info("vLLM 서버가 준비되었습니다!")
+                    logger.info("포스트 생성용 vLLM 서버가 준비되었습니다!")
                     return True
             except requests.exceptions.RequestException:
                 pass
             
-            time.sleep(5)
+            time.sleep(3)
         
         logger.error(f"서버 준비 대기 시간 초과 ({timeout}초)")
         return False
@@ -165,10 +125,8 @@ class VLLMLauncher:
         logger.info("vLLM 서버를 중지합니다...")
         
         try:
-            # 프로세스 그룹 전체에 SIGTERM 전송
             os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
             
-            # 정상 종료 대기
             try:
                 self.process.wait(timeout=30)
                 logger.info("vLLM 서버가 정상적으로 중지되었습니다.")
@@ -189,68 +147,16 @@ class VLLMLauncher:
         """vLLM 서버 재시작"""
         logger.info("vLLM 서버를 재시작합니다...")
         self.stop_server()
-        time.sleep(5)  # 포트 해제 대기
+        time.sleep(5)
         return self.start_server()
-    
-    def get_server_status(self) -> dict:
-        """서버 상태 정보 반환"""
-        status = {
-            "running": False,
-            "pid": None,
-            "config": self.config.dict(),
-            "memory_usage": None,
-            "gpu_info": None
-        }
-        
-        if self.process:
-            status["running"] = self.process.poll() is None
-            status["pid"] = self.process.pid
-            
-            # GPU 메모리 사용량 확인
-            try:
-                import torch
-                if torch.cuda.is_available():
-                    memory_allocated = torch.cuda.memory_allocated(0) / 1024**3
-                    memory_total = torch.cuda.get_device_properties(0).total_memory / 1024**3
-                    status["gpu_info"] = {
-                        "사용 메모리": round(memory_allocated, 2),
-                        "총 메모리": round(memory_total, 2),
-                        "메모리 사용률": round((memory_allocated / memory_total) * 100, 1)
-                    }
-            except Exception as e:
-                logger.warning(f"GPU 메모리 정보 조회 실패: {e}")
-        
-        return status
-    
-    def cleanup_resources(self) -> bool:
-        """리소스 정리 및 메모리 해제"""
-        try:
-            if self.process and self.process.poll() is None:
-                logger.info("서버 프로세스를 정리합니다...")
-                self.stop_server()
-            
-            # GPU 메모리 정리
-            try:
-                import torch
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                    torch.cuda.synchronize()
-                    logger.info("GPU 메모리 캐시가 정리되었습니다.")
-            except Exception as e:
-                logger.warning(f"GPU 메모리 정리 실패: {e}")
-            
-            return True
-        except Exception as e:
-            logger.error(f"리소스 정리 실패: {e}")
-            return False
 
 
 def main():
     """메인 실행 함수"""
     import argparse
     
-    parser = argparse.ArgumentParser(description="vLLM 서버 런처")
-    parser.add_argument("--action", choices=["start", "stop", "restart", "status"], 
+    parser = argparse.ArgumentParser(description="포스트 생성용 vLLM 서버 런처")
+    parser.add_argument("--action", choices=["start", "stop", "restart"], 
                        default="start", help="실행할 액션")
     parser.add_argument("--model-path", help="모델 경로")
     parser.add_argument("--port", type=int, help="서버 포트")
@@ -279,9 +185,6 @@ def main():
     elif args.action == "restart":
         success = launcher.restart_server()
         sys.exit(0 if success else 1)
-    elif args.action == "status":
-        status = launcher.get_server_status()
-        print(f"서버 실행 상태: {status}")
 
 
 if __name__ == "__main__":
