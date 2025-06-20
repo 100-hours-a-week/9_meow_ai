@@ -17,8 +17,8 @@ class PostPromptGenerator(BaseModel):
 
         #프롬프트 
         template = (
-            f"### Instruction:\n다음 문장을 {self.post_type}의 {self.emotion}한 말투로 바꿔줘.\n"
-            f"### Input:\n문장: {self.content}\n감정: {self.emotion}\n유형: {self.post_type}\n\n"
+            f"### Instruction:\n다음 텍스트를 {self.post_type}의 {self.emotion}한 말투로 자연스럽게 변환해줘.\n\n"
+            f"### Input:\n{self.content}\n\n"
             "### Output:"
         )
 

@@ -1,12 +1,13 @@
 """
 vLLM 서버 클라이언트
-포스트 문장 생성을 위한 간소화된 HTTP 통신
+포스트 문장 생성을 위한 HTTP 통신
 """
 
 import logging
 from typing import Dict, List, Optional
 import httpx
 from pydantic import BaseModel
+from ai_server.vLLM.server.vllm_config import get_vllm_config
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +45,13 @@ class VLLMAsyncClient:
     async def completion(self, request: CompletionRequest) -> Dict:
         """포스트 텍스트 생성 요청"""
         try:
+            # 현재 활성 모델의 서빙 모델명 가져오기
+            config = get_vllm_config()
+            current_model_config = config.get_current_model_config()
+            served_model_name = current_model_config.served_model_name
+            
             payload = {
-                "model": "HyperCLOVAX-1.5B_LoRA_fp16",
+                "model": served_model_name,
                 "prompt": request.prompt,
                 "max_tokens": request.max_tokens,
                 "temperature": request.temperature,
@@ -58,6 +64,7 @@ class VLLMAsyncClient:
                 f"{self.base_url}/v1/completions",
                 json=payload
             )
+            
             response.raise_for_status()
             return response.json()
             
