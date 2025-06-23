@@ -5,8 +5,8 @@ from fastapi.exceptions import RequestValidationError
 from ai_server.key_manager import initialize_key_pool
 from ai_server.post.post_model import PostTransformationService
 from ai_server.post.post_schemas import PostRequest, PostResponse
-from ai_server.comment.comment_model import CommentTransformationService
-from ai_server.comment.comment_schemas import CommentRequest, CommentResponse
+# from ai_server.comment.comment_model import CommentTransformationService
+# from ai_server.comment.comment_schemas import CommentRequest, CommentResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from ai_server.models.model_manager import get_model_manager
 from contextlib import asynccontextmanager
@@ -145,7 +145,7 @@ async def generate_post(request: PostRequest):
     except Exception:
         # 기타 모든 에러는 500으로 처리
         raise HTTPException(status_code=500, detail="internal_server_error")
-
+'''
 # 댓글 변환 엔드포인트
 @app.post("/generate/comment", 
     response_model=CommentResponse,
@@ -189,6 +189,51 @@ async def generate_comment(request: CommentRequest):
         else:
             raise
 
+    except Exception:
+        # 기타 모든 에러는 500으로 처리
+        raise HTTPException(status_code=500, detail="internal_server_error")
+
+'''
+
+from rule_based_converter.cat import cat_converter
+from rule_based_converter.dog import dog_converter
+from rule_based_converter.converter_schemas import *
+
+@app.post("/generate/comment", 
+    response_model=CommentResponse,
+    responses={
+        200: {"model": CommentResponse, "description": "Successfully transformed text"},
+        400: {"model": CommentResponse, "description": "Empty Input"},
+        422: {"model": CommentResponse, "description": "Unsupported animal type"},
+        500: {"model": CommentResponse, "description": "internal_server_error"}
+    }
+)
+def generate_comment(request: CommentRequest):
+    # 빈 입력 체크
+    if not request.content.strip():
+        raise HTTPException(status_code=400, detail="Empty Input")
+
+    try:
+        # 동물 타입에 따라 변환기 선택
+        if request.post_type == CommentType.DOG:
+            transformed_content = dog_converter(request.content)
+        elif request.post_type == CommentType.CAT:
+            transformed_content = cat_converter(request.content)
+        else:
+            # 이론적으로는 Enum 때문에 여기 올 수 없지만, 안전장치
+            raise HTTPException(status_code=422, detail="Unsupported animal type")
+        
+        # 성공 응답
+        return CommentResponse(
+            status_code=200,
+            message="Successfully transformed text",
+            data=transformed_content
+        )
+        
+    except HTTPException:
+        # HTTPException은 그대로 재발생
+        raise
+        
     except Exception:
         # 기타 모든 에러는 500으로 처리
         raise HTTPException(status_code=500, detail="internal_server_error")
