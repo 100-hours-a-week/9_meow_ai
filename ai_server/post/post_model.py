@@ -72,6 +72,9 @@ class PostTransformationService:
         # content 응답 포맷 제거
         text = re.sub(r"### transformed_content:\s*", "", text).strip()
         text = re.sub(r"### Output:\s*", "", text).strip()
+        
+        # "Input:" 패턴 제거 (대소문자 구분 없이)
+        text = re.sub(r"Input:\s*", "", text, flags=re.IGNORECASE).strip()
 
         # 줄바꿈 및 백슬래시 제거
         text = re.sub(r'(\\r\\n|\\r|\\n|\r|\n)', '', text)

@@ -51,7 +51,7 @@ class ModelManager:
             print()
     
     def switch_model(self, model_name: str) -> bool:
-        """모델 전환"""
+        """모델 전환 및 서버 시작"""
         try:
             print(f"모델을 '{model_name}'으로 전환합니다...")
             
@@ -62,13 +62,29 @@ class ModelManager:
                     print(f"  - {name}")
                 return False
             
-            success = self.launcher.switch_model(model_name)
+            # 기존 서버가 실행 중이면 먼저 중지
+            if self.launcher.process and self.launcher.process.poll() is None:
+                print("기존 서버를 중지합니다...")
+                self.launcher.stop_server()
+            
+            # 모델 설정 변경
+            from ai_server.vLLM.server.vllm_config import switch_model
+            switch_model(model_name)
+            
+            # 새 설정으로 launcher 업데이트
+            self.launcher = VLLMLauncher()
+            
+            print(f"✅ 모델 설정 변경 완료: {model_name}")
+            print("서버를 시작합니다...")
+            
+            # 서버 시작
+            success = self.launcher.start_server()
             
             if success:
-                print(f"✅ 모델 전환 완료: {model_name}")
+                print(f"✅ '{model_name}' 모델로 서버 시작 완료")
                 return True
             else:
-                print(f"❌ 모델 전환 실패: {model_name}")
+                print(f"❌ 서버 시작 실패")
                 return False
                 
         except Exception as e:

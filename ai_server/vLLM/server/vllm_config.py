@@ -52,7 +52,7 @@ def get_default_models() -> Dict[str, ModelConfig]:
             model_path="haebo/Meow-HyperCLOVAX-1.5B_FullFT_fp32_0619i",
             base_model_path=None,
             lora_modules=None,
-            gpu_memory_utilization=0.5,   # 낮은 메모리 
+            gpu_memory_utilization=0.8,
             max_model_len=1536,           # 한국어 600자 처리 
             max_num_batched_tokens=1536,  # 단일 요청 중심 배치
             max_num_seqs=12,              # 풀 파인튜닝 모델은 약간 더 많은 동시 처리
@@ -251,7 +251,9 @@ def update_vllm_config(**kwargs) -> VLLMConfig:
 def switch_model(model_name: str) -> VLLMConfig:
     """활성 모델 전환"""
     global vllm_config
-        if not vllm_config.validate_active_model(model_name):
+    
+    # 모델 존재 여부 검증
+    if model_name not in vllm_config.supported_models:
         available_models = list(vllm_config.supported_models.keys())
         raise ValueError(f"지원되지 않는 모델: {model_name}. 사용 가능한 모델: {available_models}")
     

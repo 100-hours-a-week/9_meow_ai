@@ -8,8 +8,8 @@ class InferenceConfig(BaseModel):
     """추론 파라미터 중앙 설정 - 성능 최적화"""
     post_max_tokens: int = Field(default=300, description="포스트 생성 최대 토큰 수")
     post_temperature: float = Field(default=0.3, description="포스트 생성 온도 - 일관성 제어")
-    post_top_p: float = Field(default=0.8, description="포스트 생성 top_p - 다양성 제어")
-    post_top_k: int = Field(default=40, description="포스트 생성 top_k - 토큰 선택 범위")
+    post_top_p: float = Field(default=0.9, description="포스트 생성 top_p - 다양성 제어")
+    post_top_k: int = Field(default=2, description="포스트 생성 top_k - 토큰 선택 범위")
     post_stop_tokens: List[str] = Field(default=["</s>", "<|endoftext|>", "\n\n"], description="포스트 생성 중지 토큰")
     
     # 댓글 생성용 파라미터
