@@ -147,7 +147,6 @@ class ModelManager:
     def detect_model(self, model_path: str) -> None:
         """모델 타입 감지"""
         try:
-            print(f"모델 타입을 감지합니다: {model_path}")
             detected_type = self.detector.detect_model_type(model_path)
             
             print(f"감지된 모델 타입: {detected_type.value}")
@@ -170,43 +169,6 @@ class ModelManager:
                 
         except Exception as e:
             print(f"❌ 모델 감지 중 오류: {e}")
-    
-    def validate_model(self, model_name: str = None) -> bool:
-        """모델 설정 검증"""
-        try:
-            if model_name:
-                # 특정 모델 검증
-                if model_name not in self.config.supported_models:
-                    print(f"❌ 지원되지 않는 모델: {model_name}")
-                    return False
-                
-                # 임시로 모델 전환 (검증용)
-                original_model = self.config.active_model
-                switch_model(model_name)
-                self.config = get_vllm_config()
-                
-                print(f"모델 '{model_name}' 설정을 검증합니다...")
-                success = self.launcher.validate_model_setup()
-                
-                # 원래 모델로 복원
-                switch_model(original_model)
-                self.config = get_vllm_config()
-                
-            else:
-                # 현재 활성 모델 검증
-                print(f"현재 활성 모델 '{self.config.active_model}' 설정을 검증합니다...")
-                success = self.launcher.validate_model_setup()
-            
-            if success:
-                print("✅ 모델 설정이 유효합니다.")
-                return True
-            else:
-                print("❌ 모델 설정에 문제가 있습니다.")
-                return False
-                
-        except Exception as e:
-            print(f"❌ 모델 검증 중 오류: {e}")
-            return False
     
     def export_config(self, output_path: str) -> bool:
         """현재 설정을 파일로 내보내기"""
@@ -262,8 +224,8 @@ def main():
   # 모델 타입 감지
   python model_manager.py detect haebo/Meow-HyperCLOVAX-1.5B_LoRA_fp16_0619i
   
-  # 모델 설정 검증
-  python model_manager.py validate
+  # 설정 내보내기
+  python model_manager.py export config.json
         """
     )
     
@@ -292,10 +254,6 @@ def main():
     # detect 명령
     detect_parser = subparsers.add_parser('detect', help='모델 타입 감지')
     detect_parser.add_argument('model_path', help='감지할 모델 경로')
-    
-    # validate 명령
-    validate_parser = subparsers.add_parser('validate', help='모델 설정 검증')
-    validate_parser.add_argument('--model', help='검증할 모델 이름 (기본값: 현재 활성 모델)')
     
     # export 명령
     export_parser = subparsers.add_parser('export', help='설정 내보내기')
@@ -332,9 +290,6 @@ def main():
         
         elif args.command == 'detect':
             manager.detect_model(args.model_path)
-        
-        elif args.command == 'validate':
-            manager.validate_model(args.model)
         
         elif args.command == 'export':
             manager.export_config(args.output_path)

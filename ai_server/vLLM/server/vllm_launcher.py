@@ -12,10 +12,10 @@ import logging
 from typing import Optional
 from pathlib import Path
 import requests
-from huggingface_hub import HfApi, hf_hub_download
+from huggingface_hub import HfApi
 from huggingface_hub.utils import RepositoryNotFoundError
 
-from .vllm_config import VLLMConfig, VLLMServerArgs, get_vllm_config, ModelType, switch_model
+from .vllm_config import VLLMConfig, VLLMServerArgs, get_vllm_config, ModelType
 
 
 # 로깅 설정
@@ -146,119 +146,12 @@ class VLLMLauncher:
         self.process: Optional[subprocess.Popen] = None
         self.server_args = VLLMServerArgs(self.config)
         self.detector = ModelDetector()
-        
-    def validate_model_setup(self) -> bool:
-        """현재 모델 설정 유효성 검사"""
-        model_config = self.config.get_current_model_config()
-        
-        logger.info(f"모델 타입: {model_config.model_type}")
-        logger.info(f"모델 경로: {model_config.model_path}")
-        
-        if model_config.model_type == ModelType.LORA:
-            return self._validate_lora_model(model_config)
-        elif model_config.model_type == ModelType.FULL_FINETUNED:
-            return self._validate_full_finetuned_model(model_config)
-        else:
-            logger.error(f"지원되지 않는 모델 타입: {model_config.model_type}")
-            return False
-    
-    def _validate_lora_model(self, model_config) -> bool:
-        """LoRA 모델 검증"""
-        # 베이스 모델 경로 확인
-        if not model_config.base_model_path:
-            logger.error("LoRA 모델에는 base_model_path가 필요합니다.")
-            return False
-        
-        # 베이스 모델 존재 확인
-        if not self._check_model_exists(model_config.base_model_path):
-            logger.error(f"베이스 모델을 찾을 수 없습니다: {model_config.base_model_path}")
-            return False
-        
-        # LoRA 어댑터 확인
-        if not self._check_model_exists(model_config.model_path):
-            logger.error(f"LoRA 어댑터를 찾을 수 없습니다: {model_config.model_path}")
-            return False
-        
-        logger.info("✅ LoRA 모델 설정이 유효합니다.")
-        return True
-    
-    def _validate_full_finetuned_model(self, model_config) -> bool:
-        """풀 파인튜닝 모델 검증"""
-        if not self._check_model_exists(model_config.model_path):
-            logger.error(f"풀 파인튜닝 모델을 찾을 수 없습니다: {model_config.model_path}")
-            return False
-        
-        logger.info("✅ 풀 파인튜닝 모델 설정이 유효합니다.")
-        return True
-    
-    def _check_model_exists(self, model_path: str) -> bool:
-        """모델 존재 여부 확인"""
-        # 허깅페이스 모델 이름 형식 체크
-        if "/" in model_path and not model_path.startswith(("./", "/")):
-            try:
-                api = HfApi()
-                api.model_info(model_path)
-                logger.info(f"허깅페이스 모델 확인: {model_path}")
-                return True
-            except RepositoryNotFoundError:
-                return False
-            except Exception as e:
-                logger.warning(f"모델 확인 중 오류: {e}")
-                return False
-        
-        # 로컬 경로 체크
-        model_path_obj = Path(model_path)
-        if model_path_obj.exists():
-            logger.info(f"로컬 모델 확인: {model_path}")
-            return True
-        
-        return False
-    
-    def switch_model(self, model_name: str) -> bool:
-        """모델 전환"""
-        try:
-            # 현재 서버가 실행 중이면 중지
-            if self.process and self.process.poll() is None:
-                logger.info("기존 서버를 중지합니다...")
-                self.stop_server()
-                time.sleep(2)
-            
-            # 모델 전환
-            switch_model(model_name)
-            self.config = get_vllm_config()
-            self.server_args = VLLMServerArgs(self.config)
-            
-            logger.info(f"모델이 '{model_name}'으로 전환되었습니다.")
-            return True
-            
-        except Exception as e:
-            logger.error(f"모델 전환 실패: {e}")
-            return False
-    
-    def auto_detect_and_configure_model(self, model_path: str) -> bool:
-        """모델 자동 감지 및 설정"""
-        try:
-            detected_type = self.detector.detect_model_type(model_path)
-            logger.info(f"감지된 모델 타입: {detected_type}")
-            
-            # TODO: 감지된 타입에 따라 설정 자동 업데이트
-            # 현재는 수동으로 설정된 모델만 지원
-            
-            return True
-            
-        except Exception as e:
-            logger.error(f"모델 자동 감지 실패: {e}")
-            return False
     
     def start_server(self) -> bool:
         """vLLM 서버 시작 - 모델 타입별 최적화"""
         if self.process and self.process.poll() is None:
             logger.warning("vLLM 서버가 이미 실행 중입니다.")
             return True
-        
-        if not self.validate_model_setup():
-            logger.error("모델 설정 검증에 실패했습니다.")
-            return False
         
         # 서버 실행 명령 구성
         cmd = ["python", "-m", "vllm.entrypoints.openai.api_server"] + self.server_args.get_server_args()
@@ -389,9 +282,8 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="다중 모델 타입 지원 vLLM 서버 런처")
-    parser.add_argument("--action", choices=["start", "stop", "restart", "switch", "status"], 
+    parser.add_argument("--action", choices=["start", "stop", "restart", "status"], 
                        default="start", help="실행할 액션")
-    parser.add_argument("--model", help="사용할 모델 이름 (switch 액션용)")
     parser.add_argument("--port", type=int, help="서버 포트")
     
     args = parser.parse_args()
@@ -406,14 +298,6 @@ def main():
         sys.exit(0 if success else 1)
     elif args.action == "restart":
         success = launcher.restart_server()
-        sys.exit(0 if success else 1)
-    elif args.action == "switch":
-        if not args.model:
-            logger.error("--model 인자가 필요합니다.")
-            sys.exit(1)
-        success = launcher.switch_model(args.model)
-        if success:
-            success = launcher.start_server()
         sys.exit(0 if success else 1)
     elif args.action == "status":
         status = launcher.get_server_status()

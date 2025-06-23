@@ -161,9 +161,6 @@ class VLLMConfig(BaseSettings):
         """현재 모델이 풀 파인튜닝 모델인지 확인"""
         return self.get_current_model_config().model_type == ModelType.FULL_FINETUNED
     
-    def validate_active_model(self, model_name: str) -> bool:
-        """활성 모델 유효성 검사"""
-        return model_name in self.supported_models
     
     # 환경 변수 설정
     class Config:
@@ -254,7 +251,7 @@ def update_vllm_config(**kwargs) -> VLLMConfig:
 def switch_model(model_name: str) -> VLLMConfig:
     """활성 모델 전환"""
     global vllm_config
-    if not vllm_config.validate_active_model(model_name):
+        if not vllm_config.validate_active_model(model_name):
         available_models = list(vllm_config.supported_models.keys())
         raise ValueError(f"지원되지 않는 모델: {model_name}. 사용 가능한 모델: {available_models}")
     
