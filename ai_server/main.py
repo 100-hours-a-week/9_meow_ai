@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from ai_server.post.post_schemas import PostRequest, PostResponse
 from ai_server.rule_based_converter.cat import cat_converter
 from ai_server.rule_based_converter.dog import dog_converter
-from ai_server.comment.comment_schemas import CommentRequest, CommentResponse
+from ai_server.rule_based_converter.converter_schemas import CommentRequest, CommentResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from ai_server.post.post_model import PostTransformationService
 import logging
