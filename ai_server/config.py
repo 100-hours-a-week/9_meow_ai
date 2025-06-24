@@ -1,6 +1,6 @@
 from typing import List, Optional
 from pydantic_settings import BaseSettings
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, Field
 from functools import lru_cache
 
 
