@@ -4,7 +4,7 @@ vLLM 서버 설정 관리
 """
 
 import os
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict
 from enum import Enum
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
@@ -241,7 +241,6 @@ def get_vllm_config() -> VLLMConfig:
 
 def update_vllm_config(**kwargs) -> VLLMConfig:
     """vLLM 설정 업데이트"""
-    global vllm_config
     for key, value in kwargs.items():
         if hasattr(vllm_config, key):
             setattr(vllm_config, key, value)
@@ -256,6 +255,5 @@ def switch_model(model_name: str) -> VLLMConfig:
     if model_name not in vllm_config.supported_models:
         available_models = list(vllm_config.supported_models.keys())
         raise ValueError(f"지원되지 않는 모델: {model_name}. 사용 가능한 모델: {available_models}")
-    
-    vllm_config.active_model = model_name
+    vllm_config = VLLMConfig(active_model=model_name)
     return vllm_config 

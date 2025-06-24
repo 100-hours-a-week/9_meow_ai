@@ -50,7 +50,6 @@ class PostTransformationService:
     def _postprocess(self, text: str, original_content: str = "") -> str:
         """텍스트 후처리"""
         import re
-        from collections import Counter
 
         EMOJI_PATTERN = (
             "["
