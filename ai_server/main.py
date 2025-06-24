@@ -2,19 +2,15 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from ai_server.key_manager import initialize_key_pool
-from ai_server.post.post_model import PostTransformationService
 from ai_server.post.post_schemas import PostRequest, PostResponse
-from ai_server.comment.comment_model import CommentTransformationService
+from ai_server.rule_based_converter.cat import cat_converter
+from ai_server.rule_based_converter.dog import dog_converter
 from ai_server.comment.comment_schemas import CommentRequest, CommentResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 import logging
 
 # 로깅 설정
 logger = logging.getLogger(__name__)
-
-# API 키 풀 초기화
-key_pool = initialize_key_pool()
 
 # FastAPI 앱 초기화
 app = FastAPI(
@@ -134,27 +130,22 @@ async def generate_post(request: PostRequest):
         200: {"model": CommentResponse, "description": "Successfully transformed text"},
         400: {"model": CommentResponse, "description": "Empty Input"},
         422: {"model": CommentResponse, "description": "wrong post_type"},
-        500: {"model": CommentResponse, "description": "internal_server_error"},
-        503: {"model": CommentResponse, "description": "API key is not available"}
+        500: {"model": CommentResponse, "description": "internal_server_error"}
     }
 )
 async def generate_comment(request: CommentRequest):
     # 빈 입력 체크
     if not request.content.strip():
         raise HTTPException(status_code=400, detail="Empty Input")
-        
-    # 사용 가능한 API 키 풀에서 키 획득
-    api_key = await key_pool.get_available_key()
-    if not api_key:
-        raise HTTPException(status_code=503, detail="API key is not available")
 
     try:
-        # 스키마에서 정의된 타입을 사용하여 댓글 변환 서비스 실행
-        comment_service = CommentTransformationService(api_key=api_key)
-        transformed_content = await comment_service.transform_comment(
-            content=request.content,
-            post_type=request.post_type
-        )
+        # post_type에 따라 적절한 변환기 선택하게
+        if request.post_type == "cat":
+            transformed_content = cat_converter(request.content)
+        elif request.post_type == "dog":
+            transformed_content = dog_converter(request.content)
+        else:
+            raise HTTPException(status_code=422, detail="wrong post_type")
         
         # 성공 응답
         return CommentResponse(
