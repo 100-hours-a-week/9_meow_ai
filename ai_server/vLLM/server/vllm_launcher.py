@@ -157,7 +157,7 @@ class VLLMLauncher:
         cmd = ["python", "-m", "vllm.entrypoints.openai.api_server"] + self.server_args.get_server_args()
         
         model_config = self.config.get_current_model_config()
-        logger.info(f"🚀 {model_config.model_type.value} 모델 서버를 시작합니다...")
+        logger.info(f"{model_config.model_type.value} 모델 서버를 시작합니다...")
         logger.info(f"모델: {self.config.active_model}")
         logger.info(f"실행 명령: {' '.join(cmd)}")
         
@@ -211,7 +211,7 @@ class VLLMLauncher:
             try:
                 response = requests.get(url, timeout=5)
                 if response.status_code == 200:
-                    logger.info(f"🎉 {model_config.model_type.value} 모델 서버가 준비되었습니다!")
+                    logger.info(f"{model_config.model_type.value} 모델 서버가 준비되었습니다!")
                     logger.info(f"서빙 모델명: {model_config.served_model_name}")
                     return True
             except requests.exceptions.RequestException:

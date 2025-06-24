@@ -40,7 +40,7 @@ class ModelManager:
         print()
         
         for model_name, model_config in self.config.supported_models.items():
-            status = "🟢 활성" if model_name == self.config.active_model else "⚪ 비활성"
+            status = "활성" if model_name == self.config.active_model else "비활성"
             print(f"{status} {model_name}")
             print(f"  타입: {model_config.model_type.value}")
             print(f"  경로: {model_config.model_path}")
@@ -56,7 +56,7 @@ class ModelManager:
             print(f"모델을 '{model_name}'으로 전환합니다...")
             
             if model_name not in self.config.supported_models:
-                print(f"❌ 지원되지 않는 모델: {model_name}")
+                print(f"지원되지 않는 모델: {model_name}")
                 print("지원되는 모델 목록:")
                 for name in self.config.supported_models.keys():
                     print(f"  - {name}")
@@ -74,21 +74,21 @@ class ModelManager:
             # 새 설정으로 launcher 업데이트
             self.launcher = VLLMLauncher()
             
-            print(f"✅ 모델 설정 변경 완료: {model_name}")
+            print(f"모델 설정 변경 완료: {model_name}")
             print("서버를 시작합니다...")
             
             # 서버 시작
             success = self.launcher.start_server()
             
             if success:
-                print(f"✅ '{model_name}' 모델로 서버 시작 완료")
+                print(f"'{model_name}' 모델로 서버 시작 완료")
                 return True
             else:
-                print(f"❌ 서버 시작 실패")
+                print(f"서버 시작 실패")
                 return False
                 
         except Exception as e:
-            print(f"❌ 모델 전환 중 오류: {e}")
+            print(f"모델 전환 중 오류: {e}")
             return False
     
     def start_server(self) -> bool:
@@ -98,15 +98,15 @@ class ModelManager:
             success = self.launcher.start_server()
             
             if success:
-                print("✅ 서버 시작 완료")
+                print("서버 시작 완료")
                 self.show_status()
                 return True
             else:
-                print("❌ 서버 시작 실패")
+                print("서버 시작 실패")
                 return False
                 
         except Exception as e:
-            print(f"❌ 서버 시작 중 오류: {e}")
+            print(f"서버 시작 중 오류: {e}")
             return False
     
     def stop_server(self) -> bool:
@@ -116,14 +116,14 @@ class ModelManager:
             success = self.launcher.stop_server()
             
             if success:
-                print("✅ 서버 중지 완료")
+                print("서버 중지 완료")
                 return True
             else:
-                print("❌ 서버 중지 실패")
+                print("서버 중지 실패")
                 return False
                 
         except Exception as e:
-            print(f"❌ 서버 중지 중 오류: {e}")
+            print(f"서버 중지 중 오류: {e}")
             return False
     
     def restart_server(self) -> bool:
@@ -133,15 +133,15 @@ class ModelManager:
             success = self.launcher.restart_server()
             
             if success:
-                print("✅ 서버 재시작 완료")
+                print("서버 재시작 완료")
                 self.show_status()
                 return True
             else:
-                print("❌ 서버 재시작 실패")
+                print("서버 재시작 실패")
                 return False
                 
         except Exception as e:
-            print(f"❌ 서버 재시작 중 오류: {e}")
+            print(f"서버 재시작 중 오류: {e}")
             return False
     
     def show_status(self) -> None:
@@ -149,7 +149,7 @@ class ModelManager:
         status = self.launcher.get_server_status()
         
         print("=== vLLM 서버 상태 ===")
-        print(f"실행 상태: {'🟢 실행 중' if status['running'] else '🔴 중지'}")
+        print(f"실행 상태: {'실행 중' if status['running'] else '중지'}")
         
         if status['running']:
             print(f"PID: {status['pid']}")
@@ -169,22 +169,22 @@ class ModelManager:
             
             # 감지 결과에 따른 권장 설정 출력
             if detected_type == ModelType.LORA:
-                print("\n📋 LoRA 모델 설정 가이드:")
+                print("\nLoRA 모델 설정 가이드:")
                 print("- base_model_path: 베이스 모델 경로 설정 필요")
                 print("- lora_modules: LoRA 어댑터 모듈 설정 필요")
                 print("- GPU 메모리 사용률: 0.7 권장")
             elif detected_type == ModelType.FULL_FINETUNED:
-                print("\n📋 풀 파인튜닝 모델 설정 가이드:")
+                print("\n풀 파인튜닝 모델 설정 가이드:")
                 print("- 베이스 모델 경로 불필요")
                 print("- GPU 메모리 사용률: 0.9 권장")
                 print("- 더 많은 배치 크기 및 시퀀스 길이 설정 가능")
             else:
-                print("\n📋 기본 모델 설정 가이드:")
+                print("\n기본 모델 설정 가이드:")
                 print("- 표준 설정 사용")
                 print("- GPU 메모리 사용률: 0.8 권장")
                 
         except Exception as e:
-            print(f"❌ 모델 감지 중 오류: {e}")
+            print(f"모델 감지 중 오류: {e}")
     
     def export_config(self, output_path: str) -> bool:
         """현재 설정을 파일로 내보내기"""
@@ -213,11 +213,11 @@ class ModelManager:
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(config_dict, f, indent=2, ensure_ascii=False)
             
-            print(f"✅ 설정이 '{output_path}'에 저장되었습니다.")
+            print(f"설정이 '{output_path}'에 저장되었습니다.")
             return True
             
         except Exception as e:
-            print(f"❌ 설정 내보내기 실패: {e}")
+            print(f"설정 내보내기 실패: {e}")
             return False
 
 
@@ -313,7 +313,7 @@ def main():
     except KeyboardInterrupt:
         print("\n중단되었습니다.")
     except Exception as e:
-        print(f"❌ 오류 발생: {e}")
+        print(f"오류 발생: {e}")
         sys.exit(1)
 
 
