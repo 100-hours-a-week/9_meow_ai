@@ -15,7 +15,7 @@ from typing import Dict, Any
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from ai_server.vLLM import (
+from ai_server.external.vLLM import (
     VLLMLauncher, 
     ModelDetector, 
     get_vllm_config, 
@@ -68,7 +68,7 @@ class ModelManager:
                 self.launcher.stop_server()
             
             # 모델 설정 변경
-            from ai_server.vLLM.server.vllm_config import switch_model
+            from ai_server.external.vLLM.server.vllm_config import switch_model
             switch_model(model_name)
             
             # 새 설정으로 launcher 업데이트
