@@ -1,8 +1,8 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 import google.generativeai as genai
-from ai_server.comment.comment_prompt import CommentPromptGenerator
-from ai_server.comment.comment_schemas import CommentType
-from ai_server.config import get_inference_config
+from ai_server.util.comment_prompt import CommentPromptGenerator
+from ai_server.schemas.comment_schemas import CommentType
+from ai_server.core.config import get_inference_config
 
 class CommentTransformationService:
     def __init__(self, api_key: str):

@@ -1,7 +1,7 @@
-from ai_server.post.post_schemas import Emotion, PostType
-from ai_server.post.post_prompt import PostPromptGenerator
-from ai_server.vLLM import VLLMAsyncClient, CompletionRequest
-from ai_server.config import get_inference_config
+from ai_server.schemas.post_schemas import Emotion, PostType
+from ai_server.util.post_prompt import PostPromptGenerator
+from ai_server.external.vLLM import VLLMAsyncClient, CompletionRequest
+from ai_server.core.config import get_inference_config
 import logging
 
 # 로깅 설정

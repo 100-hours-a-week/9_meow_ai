@@ -15,7 +15,7 @@ import requests
 from huggingface_hub import HfApi
 from huggingface_hub.utils import RepositoryNotFoundError
 
-from .vllm_config import VLLMConfig, VLLMServerArgs, get_vllm_config, ModelType
+from ai_server.external.vLLM.server.vllm_config import VLLMConfig, VLLMServerArgs, get_vllm_config, ModelType
 
 
 # 로깅 설정

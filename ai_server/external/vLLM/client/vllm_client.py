@@ -7,7 +7,7 @@ import logging
 from typing import Dict, List, Optional
 import httpx
 from pydantic import BaseModel
-from ai_server.vLLM.server.vllm_config import get_vllm_config
+from ai_server.external.vLLM.server.vllm_config import get_vllm_config
 
 logger = logging.getLogger(__name__)
 
