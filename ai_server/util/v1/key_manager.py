@@ -1,7 +1,7 @@
 from typing import List, Optional
 import asyncio
 import time
-from ai_server.config import get_settings
+from ai_server.core.config import get_settings
 
 class APIKeyPool:
     """API 키 풀링을 관리하는 클래스

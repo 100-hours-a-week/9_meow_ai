@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  ai-server:
+    build: .
+    container_name: meow-ai-server
+    ports:
+      - "8000:8000"  # FastAPI 서버
+      - "8001:8001"  # vLLM 서버
+    environment:
+      # 모델 설정
+      VLLM_ACTIVE_MODEL: "haebo/Meow-HyperCLOVAX-1.5B_FullFT_fp32_0619i"
+      
+      # GPU 설정
+      CUDA_VISIBLE_DEVICES: "0"
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
+      
+      # L4 GPU 메모리 최적화
+      PYTORCH_CUDA_ALLOC_CONF: "max_split_size_mb:128"
+      CUDA_MODULE_LOADING: "LAZY"
+      
+      # Python 최적화
+      PYTHONPATH: "/app"
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    
+    # 로깅 최소화
+    logging:
+      driver: "none"
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["0"]  # L4 GPU 지정
+              capabilities: [gpu]
+        limits:
+          memory: 32G  # L4 환경에 맞는 메모리 제한
+    
+    restart: unless-stopped
+    
+    # 공유 메모리 최적화 (vLLM 성능 향상)
+    shm_size: 2gb
+    
+    # 헬스체크 (간소화)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 2
+      start_period: 120s 
