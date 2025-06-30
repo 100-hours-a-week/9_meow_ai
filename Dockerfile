@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1
 
-# 빌드 스테이지 - CUDA 12.1 (PyTorch 2.5.1 호환)
-FROM nvidia/cuda:12.1-devel-ubuntu22.04 AS builder
+# 빌드 스테이지 - CUDA 12.1.1 (PyTorch 2.5.1 호환)
+FROM nvidia/cuda:12.1.1-devel-ubuntu22.04 AS builder
 
 # Python 3.10 설치 (프로젝트 버전 3.10.15와 일치)
 RUN apt-get update && apt-get install -y \
-    python3.10 python3.10-pip python3.10-dev python3.10-venv \
+    python3.10 python3-pip python3.10-dev python3.10-venv \
     build-essential git curl \
     && ln -sf /usr/bin/python3.10 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.10 /usr/bin/python \
@@ -25,8 +25,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ai_server ai_server
 
-# 런타임 스테이지 - CUDA 12.1 런타임
-FROM nvidia/cuda:12.1-runtime-ubuntu22.04
+# 런타임 스테이지 - CUDA 12.1.1 런타임
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
 # Python 3.10 런타임 설치
 RUN apt-get update && apt-get install -y \
@@ -46,33 +46,32 @@ COPY --from=builder /usr/local/lib/python3.10/dist-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin  
 COPY --from=builder /app/ai_server ai_server
 
-# supervisord 설정 (로깅 최소화)
-COPY <<EOF /etc/supervisor/conf.d/app.conf
-[supervisord]
-nodaemon=true
-silent=true
-logfile=/dev/null
-logfile_maxbytes=0
+# supervisord 설정
+RUN mkdir -p /etc/supervisor/conf.d && \
+    echo '[supervisord]' > /etc/supervisor/conf.d/app.conf && \
+    echo 'nodaemon=true' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'silent=true' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'logfile_maxbytes=0' >> /etc/supervisor/conf.d/app.conf && \
+    echo '' >> /etc/supervisor/conf.d/app.conf && \
+    echo '[program:vllm]' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'command=python3 -m ai_server.external.vLLM.server.vllm_launcher --action start' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'autostart=true' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'autorestart=true' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'stdout_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'stderr_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'redirect_stderr=false' >> /etc/supervisor/conf.d/app.conf && \
+    echo '' >> /etc/supervisor/conf.d/app.conf && \
+    echo '[program:fastapi]' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'command=python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level error' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'autostart=true' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'autorestart=true' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'stdout_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'stderr_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'redirect_stderr=false' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'depends_on=vllm' >> /etc/supervisor/conf.d/app.conf
 
-[program:vllm]
-command=python3 -m ai_server.external.vLLM.server.vllm_launcher start
-autostart=true
-autorestart=true
-stdout_logfile=/dev/null
-stderr_logfile=/dev/null
-redirect_stderr=false
-
-[program:fastapi]
-command=python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level error
-autostart=true
-autorestart=true
-stdout_logfile=/dev/null
-stderr_logfile=/dev/null
-redirect_stderr=false
-depends_on=vllm
-EOF
-
-# 환경변수 (L4 GPU 23GB VRAM 최적화 + 로깅 최소화)
+# 환경변수
 ENV PYTHONPATH=/app \
     VLLM_ACTIVE_MODEL="" \
     CUDA_VISIBLE_DEVICES=0 \
@@ -85,7 +84,7 @@ ENV PYTHONPATH=/app \
 
 EXPOSE 8000 8001
 
-# 헬스체크 (L4 GPU 성능에 맞춘 타이밍)
+# 헬스체크
 HEALTHCHECK --interval=30s --timeout=15s --start-period=90s --retries=3 \
     CMD curl -f http://localhost:8000/health && curl -f http://localhost:8001/v1/models
 
