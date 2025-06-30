@@ -1,13 +1,12 @@
 # unit_test.py
 
 import pytest
-from ai_server.config import get_settings
-from ai_server.key_manager import APIKeyPool, initialize_key_pool
-from ai_server.post.post_model import PostTransformationService
-from ai_server.post.post_schemas import PostRequest, Emotion, PostType
+from ai_server.core.config import get_settings
+from ai_server.util.v1.key_manager import APIKeyPool, initialize_key_pool
+from ai_server.model.post_model import PostTransformationService
+from ai_server.schemas.post_schemas import PostRequest, Emotion, PostType
 # from ai_server.comment.comment_model import CommentTransformationService  # 더 이상 사용하지 않음
 # from ai_server.comment.comment_schemas import CommentRequest, CommentType  # 더 이상 사용하지 않음
-from ai_server.config import get_settings
 
 # test_config.py
 def test_get_settings():
