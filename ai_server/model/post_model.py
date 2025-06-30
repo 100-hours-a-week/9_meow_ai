@@ -94,7 +94,7 @@ class PostTransformationService:
         text = re.sub(r'([!?\.💢❤⭐✨🐾…]{1})( \1|\1){2,}', r'\1\1', text)
 
         # 특수문자/비정상 문자 제거
-        text = re.sub(r"[️‹›／]", '', text)
+        text = re.sub(r"[️‹›／⬛]", '', text)
         text = re.sub(r'[\u200b\u200c\u200d\u2060\ufeff\u202a-\u202e\u00ad\u034f]', '', text)
 
         # 너무 짧거나 의미 없는 문장 제거
