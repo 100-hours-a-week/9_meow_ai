@@ -167,21 +167,6 @@ class ModelManager:
             
             print(f"감지된 모델 타입: {detected_type.value}")
             
-            # 감지 결과에 따른 권장 설정 출력
-            if detected_type == ModelType.LORA:
-                print("\nLoRA 모델 설정 가이드:")
-                print("- base_model_path: 베이스 모델 경로 설정 필요")
-                print("- lora_modules: LoRA 어댑터 모듈 설정 필요")
-                print("- GPU 메모리 사용률: 0.7 권장")
-            elif detected_type == ModelType.FULL_FINETUNED:
-                print("\n풀 파인튜닝 모델 설정 가이드:")
-                print("- 베이스 모델 경로 불필요")
-                print("- GPU 메모리 사용률: 0.9 권장")
-                print("- 더 많은 배치 크기 및 시퀀스 길이 설정 가능")
-            else:
-                print("\n기본 모델 설정 가이드:")
-                print("- 표준 설정 사용")
-                print("- GPU 메모리 사용률: 0.8 권장")
                 
         except Exception as e:
             print(f"모델 감지 중 오류: {e}")
