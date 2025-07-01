@@ -22,3 +22,30 @@ test/
 
 # monitoring 
 wandb/
+
+# 🤗 Models and Cache (Large Files)
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.onnx
+
+# 🤗 Hugging Face Cache
+.cache/
+*/.cache/
+
+# 📊 Large Data Files
+*.csv
+*.json.gz
+*.parquet
+*.arrow
+*.feather
+
+# 🔧 Model specific files
+tokenizer.json
+merges.txt
+vocab.json
+*.model

@@ -1,13 +1,12 @@
 # unit_test.py
 
 import pytest
-from ai_server.config import get_settings
-from ai_server.key_manager import APIKeyPool, initialize_key_pool
-from ai_server.post.post_model import PostTransformationService
-from ai_server.post.post_schemas import PostRequest, Emotion, PostType
-from ai_server.comment.comment_model import CommentTransformationService
-from ai_server.comment.comment_schemas import CommentRequest, CommentType
-from ai_server.config import get_settings
+from ai_server.core.config import get_settings
+from ai_server.util.v1.key_manager import APIKeyPool, initialize_key_pool
+from ai_server.model.post_model import PostTransformationService
+from ai_server.schemas.post_schemas import PostRequest, Emotion, PostType
+# from ai_server.comment.comment_model import CommentTransformationService  # 더 이상 사용하지 않음
+# from ai_server.comment.comment_schemas import CommentRequest, CommentType  # 더 이상 사용하지 않음
 
 # test_config.py
 def test_get_settings():
@@ -56,10 +55,7 @@ def test_initialize_key_pool_no_keys(monkeypatch):
 # test_post_model.py
 @pytest.mark.asyncio
 async def test_post_transformation_service():
-    # 테스트를 위한 API 키 설정
-    settings = get_settings()
-    api_key = settings.GOOGLE_API_KEYS[0]
-    service = PostTransformationService(api_key=api_key)
+    service = PostTransformationService(vllm_base_url="http://localhost:8001")
     
     # 테스트 데이터
     request = PostRequest(content="Hello, world!", emotion=Emotion.HAPPY, post_type=PostType.CAT)
@@ -71,20 +67,20 @@ async def test_post_transformation_service():
     assert transformed_content is not None, "변환된 콘텐츠가 없습니다."
     assert isinstance(transformed_content, str), "변환된 콘텐츠가 문자열이 아닙니다."
 
-# test_comment_model.py
-@pytest.mark.asyncio
-async def test_comment_transformation_service():
-    # 테스트를 위한 API 키 설정
-    settings = get_settings()
-    api_key = settings.GOOGLE_API_KEYS[0]
-    service = CommentTransformationService(api_key=api_key)
-    
-    # 테스트 데이터
-    request = CommentRequest(content="This is a comment.", post_type=CommentType.DOG)
-    
-    # 변환 실행
-    transformed_content = await service.transform_comment(request.content, request.post_type)
-    
-    # 결과 검증 (예상된 결과에 따라 수정 필요)
-    assert transformed_content is not None, "변환된 콘텐츠가 없습니다."
-    assert isinstance(transformed_content, str), "변환된 콘텐츠가 문자열이 아닙니다."
+# test_comment_model.py - 더 이상 사용하지 않는 Gemini API 댓글 변환 테스트 제거
+# @pytest.mark.asyncio
+# async def test_comment_transformation_service():
+#     # CommentTransformationService는 api_key 인자를 받습니다
+#     settings = get_settings()
+#     api_key = settings.GOOGLE_API_KEYS[0]
+#     service = CommentTransformationService(api_key=api_key)
+#     
+#     # 테스트 데이터
+#     request = CommentRequest(content="This is a comment.", post_type=CommentType.DOG)
+#     
+#     # 변환 실행
+#     transformed_content = await service.transform_comment(request.content, request.post_type)
+#     
+#     # 결과 검증 (예상된 결과에 따라 수정 필요)
+#     assert transformed_content is not None, "변환된 콘텐츠가 없습니다."
+#     assert isinstance(transformed_content, str), "변환된 콘텐츠가 문자열이 아닙니다."
