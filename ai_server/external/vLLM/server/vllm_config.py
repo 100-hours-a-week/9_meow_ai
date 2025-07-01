@@ -17,11 +17,11 @@ class VLLMConfig(BaseSettings):
     
     # 모델 설정
     model_path: str = Field(
-        default="haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629fe",
+        default="haebo/meow-clovax-v2",
         description="사용할 모델 경로"
     )
     served_model_name: str = Field(
-        default="Meow-HyperCLOVAX",
+        default="meow-clovax-v2",
         description="서빙 모델명"
     )
     

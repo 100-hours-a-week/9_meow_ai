@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     build-essential git curl \
     && ln -sf /usr/bin/python3.10 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.10 /usr/bin/python \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # pip 업그레이드
@@ -36,6 +37,7 @@ RUN apt-get update && apt-get install -y \
     supervisor curl \
     && ln -sf /usr/bin/python3.10 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.10 /usr/bin/python \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # pip 설치 (런타임용)
@@ -49,35 +51,40 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app/ai_server ai_server
 COPY --from=builder /app/scripts scripts
 
-# supervisord 설정
+# supervisord 설정 파일 생성 (최적화된 버전)
 RUN mkdir -p /etc/supervisor/conf.d && \
-    echo '[supervisord]' > /etc/supervisor/conf.d/app.conf && \
-    echo 'nodaemon=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'silent=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'logfile_maxbytes=0' >> /etc/supervisor/conf.d/app.conf && \
-    echo '' >> /etc/supervisor/conf.d/app.conf && \
-    echo '[program:vllm]' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'command=python3 scripts/model_manager.py start' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'autostart=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'autorestart=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'stdout_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'stderr_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo '' >> /etc/supervisor/conf.d/app.conf && \
-    echo '[program:fastapi]' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'command=python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level error' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'autostart=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'autorestart=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'stdout_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'stderr_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'depends_on=vllm' >> /etc/supervisor/conf.d/app.conf
+    { \
+        echo '[supervisord]'; \
+        echo 'nodaemon=true'; \
+        echo 'silent=true'; \
+        echo 'logfile=/dev/null'; \
+        echo 'logfile_maxbytes=0'; \
+        echo ''; \
+        echo '[program:vllm]'; \
+        echo 'command=python3 scripts/model_manager.py start'; \
+        echo 'autostart=true'; \
+        echo 'autorestart=true'; \
+        echo 'stdout_logfile=/dev/null'; \
+        echo 'stderr_logfile=/dev/null'; \
+        echo ''; \
+        echo '[program:fastapi]'; \
+        echo 'command=python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level error'; \
+        echo 'autostart=true'; \
+        echo 'autorestart=true'; \
+        echo 'stdout_logfile=/dev/null'; \
+        echo 'stderr_logfile=/dev/null'; \
+        echo 'depends_on=vllm'; \
+    } > /etc/supervisor/conf.d/app.conf
 
 # 환경변수
 ENV PYTHONPATH=/app \
-    VLLM_MODEL_PATH="haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629fe" \
+    VLLM_MODEL_PATH="haebo/meow-clovax-v2" \
     VLLM_HOST="0.0.0.0" \
     VLLM_PORT="8001" \
-    VLLM_SERVED_MODEL_NAME="Meow-HyperCLOVAX" \
+    VLLM_SERVED_MODEL_NAME="meow-clovax-v2" \
+    VLLM_GPU_MEMORY_UTILIZATION="0.8" \
+    VLLM_MAX_MODEL_LEN="1536" \
+    VLLM_MAX_NUM_SEQS="12" \
     CUDA_VISIBLE_DEVICES=0 \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility \

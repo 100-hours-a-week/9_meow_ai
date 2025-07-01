@@ -9,10 +9,10 @@ services:
       - "8001:8001"  # vLLM 서버
     environment:
       # vLLM 모델 설정
-      VLLM_MODEL_PATH: "haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629fe"
+      VLLM_MODEL_PATH: "haebo/meow-clovax-v2"
       VLLM_HOST: "0.0.0.0"
       VLLM_PORT: "8001"
-      VLLM_SERVED_MODEL_NAME: "Meow-HyperCLOVAX"
+      VLLM_SERVED_MODEL_NAME: "meow-clovax-v2"
       VLLM_GPU_MEMORY_UTILIZATION: "0.8"
       VLLM_MAX_MODEL_LEN: "1536"
       VLLM_MAX_NUM_SEQS: "12"

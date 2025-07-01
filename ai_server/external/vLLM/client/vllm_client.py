@@ -25,7 +25,7 @@ class VLLMAsyncClient:
     
     def __init__(self, base_url: str = "http://localhost:8001"):
         self.base_url = base_url.rstrip("/")
-        self.model_name = "Meow-HyperCLOVAX"  # 고정 모델명
+        self.model_name = "meow-clovax-v2" 
         self._client: Optional[httpx.AsyncClient] = None
     
     @property
@@ -62,7 +62,7 @@ class VLLMAsyncClient:
             response.raise_for_status()
             return response.json()
             
-        except Exception as e:
+        except (httpx.HTTPStatusError, httpx.RequestError, httpx.ConnectError, httpx.TimeoutException) as e:
             logger.error(f"포스트 생성 요청 실패: {e}")
             raise
     
