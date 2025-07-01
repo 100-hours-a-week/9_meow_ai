@@ -1,5 +1,5 @@
 """
-vLLM 서버 클라이언트 - 간소화 버전
+vLLM 서버 클라이언트 - 버전 2.1.0
 """
 
 import logging
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class CompletionRequest(BaseModel):
-    """간소화된 포스트 생성 요청 모델"""
+    """포스트 생성 요청 모델"""
     prompt: str
     max_tokens: int
     temperature: float
