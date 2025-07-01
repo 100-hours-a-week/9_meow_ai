@@ -23,7 +23,9 @@ RUN pip install torch==2.5.1 torchvision torchaudio --index-url https://download
 # 나머지 의존성 설치
 RUN pip install --no-cache-dir -r requirements.txt
 
+# 프로젝트 파일 복사
 COPY ai_server ai_server
+COPY scripts scripts
 
 # 런타임 스테이지 - CUDA 12.1.1 런타임
 FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
@@ -45,6 +47,7 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.10/dist-packages /usr/local/lib/python3.10/dist-packages
 COPY --from=builder /usr/local/bin /usr/local/bin  
 COPY --from=builder /app/ai_server ai_server
+COPY --from=builder /app/scripts scripts
 
 # supervisord 설정
 RUN mkdir -p /etc/supervisor/conf.d && \
@@ -55,12 +58,11 @@ RUN mkdir -p /etc/supervisor/conf.d && \
     echo 'logfile_maxbytes=0' >> /etc/supervisor/conf.d/app.conf && \
     echo '' >> /etc/supervisor/conf.d/app.conf && \
     echo '[program:vllm]' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'command=python3 -m ai_server.external.vLLM.server.vllm_launcher --action start' >> /etc/supervisor/conf.d/app.conf && \
+    echo 'command=python3 scripts/model_manager.py start' >> /etc/supervisor/conf.d/app.conf && \
     echo 'autostart=true' >> /etc/supervisor/conf.d/app.conf && \
     echo 'autorestart=true' >> /etc/supervisor/conf.d/app.conf && \
     echo 'stdout_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
     echo 'stderr_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'redirect_stderr=false' >> /etc/supervisor/conf.d/app.conf && \
     echo '' >> /etc/supervisor/conf.d/app.conf && \
     echo '[program:fastapi]' >> /etc/supervisor/conf.d/app.conf && \
     echo 'command=python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level error' >> /etc/supervisor/conf.d/app.conf && \
@@ -68,12 +70,14 @@ RUN mkdir -p /etc/supervisor/conf.d && \
     echo 'autorestart=true' >> /etc/supervisor/conf.d/app.conf && \
     echo 'stdout_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
     echo 'stderr_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'redirect_stderr=false' >> /etc/supervisor/conf.d/app.conf && \
     echo 'depends_on=vllm' >> /etc/supervisor/conf.d/app.conf
 
 # 환경변수
 ENV PYTHONPATH=/app \
     VLLM_MODEL_PATH="haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629fe" \
+    VLLM_HOST="0.0.0.0" \
+    VLLM_PORT="8001" \
+    VLLM_SERVED_MODEL_NAME="Meow-HyperCLOVAX" \
     CUDA_VISIBLE_DEVICES=0 \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility \
@@ -85,7 +89,7 @@ ENV PYTHONPATH=/app \
 EXPOSE 8000 8001
 
 # 헬스체크
-HEALTHCHECK --interval=30s --timeout=15s --start-period=90s --retries=3 \
-    CMD curl -f http://localhost:8000/health && curl -f http://localhost:8001/v1/models
+HEALTHCHECK --interval=60s --timeout=15s --start-period=120s --retries=2 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/app.conf"]

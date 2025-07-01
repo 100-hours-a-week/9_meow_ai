@@ -8,15 +8,21 @@ services:
       - "8000:8000"  # FastAPI 서버
       - "8001:8001"  # vLLM 서버
     environment:
-      # 모델 설정 (간소화)
+      # vLLM 모델 설정
       VLLM_MODEL_PATH: "haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629fe"
+      VLLM_HOST: "0.0.0.0"
+      VLLM_PORT: "8001"
+      VLLM_SERVED_MODEL_NAME: "Meow-HyperCLOVAX"
+      VLLM_GPU_MEMORY_UTILIZATION: "0.8"
+      VLLM_MAX_MODEL_LEN: "1536"
+      VLLM_MAX_NUM_SEQS: "12"
       
       # GPU 설정
       CUDA_VISIBLE_DEVICES: "0"
       NVIDIA_VISIBLE_DEVICES: "all"
       NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
       
-      # L4 GPU 메모리 최적화
+      # 메모리 최적화
       PYTORCH_CUDA_ALLOC_CONF: "max_split_size_mb:128"
       CUDA_MODULE_LOADING: "LAZY"
       
@@ -34,20 +40,20 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ["0"]  # L4 GPU 지정
+              device_ids: ["0"]
               capabilities: [gpu]
         limits:
-          memory: 32G  # L4 환경에 맞는 메모리 제한
+          memory: 32G
     
     restart: unless-stopped
     
     # 공유 메모리 최적화
     shm_size: 2gb
     
-    # 헬스체크 (간소화)
+    # 헬스체크 간소화
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 60s
-      timeout: 10s
+      timeout: 15s
       retries: 2
       start_period: 120s 
