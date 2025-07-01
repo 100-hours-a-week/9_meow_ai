@@ -73,7 +73,7 @@ RUN mkdir -p /etc/supervisor/conf.d && \
 
 # 환경변수
 ENV PYTHONPATH=/app \
-    VLLM_MODEL_PATH="haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629" \
+    VLLM_MODEL_PATH="haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629fe" \
     CUDA_VISIBLE_DEVICES=0 \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility \
