@@ -1,30 +1,20 @@
 """
-vLLM 서버 모듈
-다중 모델 타입 지원 (LoRA, 풀 파인튜닝)
+vLLM 서버 모듈 - 간소화 버전
 """
 
-__version__ = "2.0.0"
-__author__ = "KTB Team Project"
-
+# 설정
 from .vllm_config import (
-    VLLMConfig, 
-    VLLMServerArgs, 
-    ModelType,
-    ModelConfig,
-    get_vllm_config, 
-    update_vllm_config,
-    switch_model
+    VLLMConfig,
+    VLLMServerArgs,
+    get_vllm_config,
 )
-from .vllm_launcher import VLLMLauncher, ModelDetector
+
+# 런처
+from .vllm_launcher import VLLMLauncher
 
 __all__ = [
-    "VLLMConfig", 
-    "VLLMServerArgs", 
-    "ModelType",
-    "ModelConfig",
-    "VLLMLauncher", 
-    "ModelDetector",
-    "get_vllm_config", 
-    "update_vllm_config",
-    "switch_model"
+    "VLLMConfig",
+    "VLLMServerArgs",
+    "get_vllm_config",
+    "VLLMLauncher",
 ] 

@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     build-essential git curl \
     && ln -sf /usr/bin/python3.10 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.10 /usr/bin/python \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # pip 업그레이드
@@ -23,7 +24,9 @@ RUN pip install torch==2.5.1 torchvision torchaudio --index-url https://download
 # 나머지 의존성 설치
 RUN pip install --no-cache-dir -r requirements.txt
 
+# 프로젝트 파일 복사
 COPY ai_server ai_server
+COPY scripts scripts
 
 # 런타임 스테이지 - CUDA 12.1.1 런타임
 FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
@@ -34,6 +37,7 @@ RUN apt-get update && apt-get install -y \
     supervisor curl \
     && ln -sf /usr/bin/python3.10 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.10 /usr/bin/python \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # pip 설치 (런타임용)
@@ -45,35 +49,42 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.10/dist-packages /usr/local/lib/python3.10/dist-packages
 COPY --from=builder /usr/local/bin /usr/local/bin  
 COPY --from=builder /app/ai_server ai_server
+COPY --from=builder /app/scripts scripts
 
-# supervisord 설정
+# supervisord 설정 파일 생성 (최적화된 버전)
 RUN mkdir -p /etc/supervisor/conf.d && \
-    echo '[supervisord]' > /etc/supervisor/conf.d/app.conf && \
-    echo 'nodaemon=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'silent=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'logfile_maxbytes=0' >> /etc/supervisor/conf.d/app.conf && \
-    echo '' >> /etc/supervisor/conf.d/app.conf && \
-    echo '[program:vllm]' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'command=python3 -m ai_server.external.vLLM.server.vllm_launcher --action start' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'autostart=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'autorestart=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'stdout_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'stderr_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'redirect_stderr=false' >> /etc/supervisor/conf.d/app.conf && \
-    echo '' >> /etc/supervisor/conf.d/app.conf && \
-    echo '[program:fastapi]' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'command=python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level error' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'autostart=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'autorestart=true' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'stdout_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'stderr_logfile=/dev/null' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'redirect_stderr=false' >> /etc/supervisor/conf.d/app.conf && \
-    echo 'depends_on=vllm' >> /etc/supervisor/conf.d/app.conf
+    { \
+        echo '[supervisord]'; \
+        echo 'nodaemon=true'; \
+        echo 'silent=true'; \
+        echo 'logfile=/dev/null'; \
+        echo 'logfile_maxbytes=0'; \
+        echo ''; \
+        echo '[program:vllm]'; \
+        echo 'command=python3 scripts/model_manager.py start'; \
+        echo 'autostart=true'; \
+        echo 'autorestart=true'; \
+        echo 'stdout_logfile=/dev/null'; \
+        echo 'stderr_logfile=/dev/null'; \
+        echo ''; \
+        echo '[program:fastapi]'; \
+        echo 'command=python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level error'; \
+        echo 'autostart=true'; \
+        echo 'autorestart=true'; \
+        echo 'stdout_logfile=/dev/null'; \
+        echo 'stderr_logfile=/dev/null'; \
+        echo 'depends_on=vllm'; \
+    } > /etc/supervisor/conf.d/app.conf
 
 # 환경변수
 ENV PYTHONPATH=/app \
-    VLLM_ACTIVE_MODEL="" \
+    VLLM_MODEL_PATH="haebo/meow-clovax-v2" \
+    VLLM_HOST="0.0.0.0" \
+    VLLM_PORT="8001" \
+    VLLM_SERVED_MODEL_NAME="meow-clovax-v2" \
+    VLLM_GPU_MEMORY_UTILIZATION="0.8" \
+    VLLM_MAX_MODEL_LEN="1536" \
+    VLLM_MAX_NUM_SEQS="12" \
     CUDA_VISIBLE_DEVICES=0 \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility \
@@ -85,7 +96,7 @@ ENV PYTHONPATH=/app \
 EXPOSE 8000 8001
 
 # 헬스체크
-HEALTHCHECK --interval=30s --timeout=15s --start-period=90s --retries=3 \
-    CMD curl -f http://localhost:8000/health && curl -f http://localhost:8001/v1/models
+HEALTHCHECK --interval=60s --timeout=15s --start-period=120s --retries=2 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/app.conf"]

@@ -9,7 +9,6 @@ SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하는 AI API
 - 다양한 감정 상태 지원 (normal, happy, curious, sad, grumpy, angry)
 - FastAPI 기반의 RESTful API 제공
 - vLLM을 이용한 고성능 로컬 AI 추론
-- LoRA와 풀 파인튜닝 모델 자동 감지 및 전환
 
 ## 설치 방법
 
@@ -34,23 +33,19 @@ pip install -r requirements.txt
 
 ### 1단계: vLLM 서버 시작 (터미널 1)
 
-**지원되는 모델 목록 확인:**
+**현재 모델 정보 확인:**
 ```bash
-python scripts/model_manager.py list
+python scripts/model_manager.py info
 ```
 
-**모델 전환 및 서버 시작:**
+**서버 시작:**
 ```bash
-# LoRA 모델로 시작 (권장)
-python scripts/model_manager.py switch haebo/Meow-HyperCLOVAX-1.5B_LoRA_fp16_0619i
-
-# 또는 풀 파인튜닝 모델로 시작
-python scripts/model_manager.py switch haebo/Meow-HyperCLOVAX-1.5B_FullFT_fp32_0619i
+python scripts/model_manager.py start
 ```
 
 **동작 과정:**
 - 허깅페이스에서 모델 자동 다운로드 (첫 실행 시)
-- 모델을 vLLM 서버로 서빙 시작
+- `haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629fe` 모델 로드
 - 서버 실행: http://localhost:8001
 
 ### 2단계: FastAPI 서버 시작 (새 터미널 2)
@@ -122,12 +117,12 @@ curl -X POST "http://localhost:8000/generate/comment" \
      }'
 ```
 
-## 🔧 모델 관리
+## 🔧 서버 관리
 
 ### 기본 명령어
 ```bash
-# 지원되는 모델 목록 확인
-python scripts/model_manager.py list
+# 현재 모델 정보 확인
+python scripts/model_manager.py info
 
 # 서버 상태 확인
 python scripts/model_manager.py status
@@ -136,7 +131,55 @@ python scripts/model_manager.py status
 python scripts/model_manager.py start
 python scripts/model_manager.py stop
 python scripts/model_manager.py restart
+```
 
-# 모델 타입 감지
-python scripts/model_manager.py detect [모델경로]
+## 📋 환경변수 설정
+
+모델 경로를 변경하려면 환경변수를 설정할 수 있습니다:
+
+```bash
+export VLLM_MODEL_PATH="다른모델경로"
+python scripts/model_manager.py start
+```
+
+## 🐳 Docker 실행
+
+```bash
+# Docker Compose로 실행
+docker-compose up -d
+
+# 또는 개별 빌드 및 실행
+docker build -t meow-ai .
+docker run -p 8000:8000 -p 8001:8001 --gpus all meow-ai
+```
+
+## 🧪 테스트
+
+```bash
+# 단위 테스트 실행
+pytest tests/
+
+# 특정 테스트 실행
+pytest tests/unit_test.py::test_post_transformation_service
+```
+
+## 📝 모델 정보
+
+- **모델**: haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629fe
+- **타입**: 풀 파인튜닝 모델
+- **용도**: 한국어 텍스트를 고양이/강아지 말투로 변환
+- **기반**: HyperCLOVA-X 1.5B
+
+## 🔧 성능 최적화
+
+### GPU 메모리 설정
+- GPU 메모리 사용률: 80%
+- 최대 모델 길이: 1536 토큰
+- 동시 처리 시퀀스: 12개
+
+### 환경변수로 조정
+```bash
+export VLLM_GPU_MEMORY_UTILIZATION=0.8
+export VLLM_MAX_MODEL_LEN=1536
+export VLLM_MAX_NUM_SEQS=12
 ```
