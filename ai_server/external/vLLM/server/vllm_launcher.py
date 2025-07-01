@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class VLLMLauncher:
-    """간소화된 vLLM 서버 런처"""
+    """vLLM 서버 런처"""
     
     def __init__(self, config: Optional[VLLMConfig] = None):
         self.config = config or get_vllm_config()
