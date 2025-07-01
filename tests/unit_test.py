@@ -55,7 +55,7 @@ def test_initialize_key_pool_no_keys(monkeypatch):
 # test_post_model.py
 @pytest.mark.asyncio
 async def test_post_transformation_service():
-    # PostTransformationService는 vllm_base_url 인자를 받습니다
+    # 간소화된 PostTransformationService는 여전히 vllm_base_url 인자를 받습니다
     service = PostTransformationService(vllm_base_url="http://localhost:8001")
     
     # 테스트 데이터

@@ -8,8 +8,8 @@ services:
       - "8000:8000"  # FastAPI 서버
       - "8001:8001"  # vLLM 서버
     environment:
-      # 모델 설정
-      VLLM_ACTIVE_MODEL: "haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629"
+      # 모델 설정 (간소화)
+      VLLM_MODEL_PATH: "haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629"
       
       # GPU 설정
       CUDA_VISIBLE_DEVICES: "0"
@@ -41,7 +41,7 @@ services:
     
     restart: unless-stopped
     
-    # 공유 메모리 최적화 (vLLM 성능 향상)
+    # 공유 메모리 최적화
     shm_size: 2gb
     
     # 헬스체크 (간소화)
