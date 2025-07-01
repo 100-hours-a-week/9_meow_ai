@@ -54,26 +54,27 @@ COPY --from=builder /app/scripts scripts
 # supervisord 설정 파일 생성 (최적화된 버전)
 RUN mkdir -p /etc/supervisor/conf.d && \
     { \
-        echo '[supervisord]'; \
-        echo 'nodaemon=true'; \
-        echo 'silent=true'; \
-        echo 'logfile=/dev/null'; \
-        echo 'logfile_maxbytes=0'; \
-        echo ''; \
-        echo '[program:vllm]'; \
-        echo 'command=python3 scripts/model_manager.py start'; \
-        echo 'autostart=true'; \
-        echo 'autorestart=true'; \
-        echo 'stdout_logfile=/dev/null'; \
-        echo 'stderr_logfile=/dev/null'; \
-        echo ''; \
-        echo '[program:fastapi]'; \
-        echo 'command=python3 -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1 --log-level error'; \
-        echo 'autostart=true'; \
-        echo 'autorestart=true'; \
-        echo 'stdout_logfile=/dev/null'; \
-        echo 'stderr_logfile=/dev/null'; \
-        echo 'depends_on=vllm'; \
+      echo '[supervisord]'; \
+      echo 'nodaemon=true'; \
+      echo 'logfile=/dev/null'; \
+      echo 'logfile_maxbytes=0'; \
+      echo 'loglevel=info'; \
+      echo '[program:vllm]'; \
+      echo 'command=python3 -u scripts/model_manager.py start'; \
+      echo 'autostart=true'; \
+      echo 'autorestart=true'; \
+      echo 'stdout_logfile=/dev/stdout'; \
+      echo 'stdout_logfile_maxbytes=0'; \
+      echo 'stderr_logfile=/dev/stderr'; \
+      echo 'stderr_logfile_maxbytes=0'; \
+      echo '[program:fastapi]'; \
+      echo 'command=python3 -u -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1'; \
+      echo 'autostart=true'; \
+      echo 'autorestart=true'; \
+      echo 'stdout_logfile=/dev/stdout'; \
+      echo 'stdout_logfile_maxbytes=0'; \
+      echo 'stderr_logfile=/dev/stderr'; \
+      echo 'stderr_logfile_maxbytes=0'; \
     } > /etc/supervisor/conf.d/app.conf
 
 # 환경변수

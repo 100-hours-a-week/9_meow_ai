@@ -1,7 +1,10 @@
+"""
+현재 사용하지 않음. 대신 규칙 사용
+"""
 from langchain_google_genai import ChatGoogleGenerativeAI
 import google.generativeai as genai
-from ai_server.util.comment_prompt import CommentPromptGenerator
-from ai_server.schemas.comment_schemas import CommentType
+from ai_server.util.v1.comment_prompt import CommentPromptGenerator
+from ai_server.schemas.v1.comment_schemas import CommentType
 from ai_server.core.config import get_inference_config
 
 class CommentTransformationService:

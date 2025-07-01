@@ -5,7 +5,7 @@ from ai_server.service.dog import dog_converter
 
 router = APIRouter()
 
-@router.post("/", 
+@router.post("", 
     response_model=CommentResponse,
     responses={
         200: {"model": CommentResponse, "description": "Successfully transformed text"},

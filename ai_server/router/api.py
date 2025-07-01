@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from ai_server.api.v1 import posts, comments
+from ai_server.router.api import posts
+from ai_server.router.api import comments
 
 api_router = APIRouter()
 
