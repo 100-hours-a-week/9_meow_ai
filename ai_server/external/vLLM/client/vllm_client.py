@@ -1,19 +1,17 @@
 """
-vLLM 서버 클라이언트
-포스트 문장 생성을 위한 HTTP 통신
+vLLM 서버 클라이언트 - 간소화 버전
 """
 
 import logging
 from typing import Dict, List, Optional
 import httpx
 from pydantic import BaseModel
-from ai_server.external.vLLM.server.vllm_config import get_vllm_config
 
 logger = logging.getLogger(__name__)
 
 
 class CompletionRequest(BaseModel):
-    """포스트 생성 요청 모델 - 성능 최적화된 파라미터"""
+    """간소화된 포스트 생성 요청 모델"""
     prompt: str
     max_tokens: int
     temperature: float
@@ -23,10 +21,11 @@ class CompletionRequest(BaseModel):
 
 
 class VLLMAsyncClient:
-    """비동기 vLLM 클라이언트 - 포스트 생성 최적화"""
+    """간소화된 vLLM 비동기 클라이언트"""
     
     def __init__(self, base_url: str = "http://localhost:8001"):
         self.base_url = base_url.rstrip("/")
+        self.model_name = "Meow-HyperCLOVAX"  # 고정 모델명
         self._client: Optional[httpx.AsyncClient] = None
     
     @property
@@ -34,7 +33,7 @@ class VLLMAsyncClient:
         """비동기 HTTP 클라이언트 인스턴스"""
         if self._client is None:
             self._client = httpx.AsyncClient(
-                timeout=httpx.Timeout(30.0),  # 포스트 생성용 단축
+                timeout=httpx.Timeout(30.0),
                 headers={
                     "Content-Type": "application/json",
                     "Accept": "application/json"
@@ -45,13 +44,8 @@ class VLLMAsyncClient:
     async def completion(self, request: CompletionRequest) -> Dict:
         """포스트 텍스트 생성 요청"""
         try:
-            # 현재 활성 모델의 서빙 모델명 가져오기
-            config = get_vllm_config()
-            current_model_config = config.get_current_model_config()
-            served_model_name = current_model_config.served_model_name
-            
             payload = {
-                "model": served_model_name,
+                "model": self.model_name,
                 "prompt": request.prompt,
                 "max_tokens": request.max_tokens,
                 "temperature": request.temperature,
