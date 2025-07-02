@@ -4,7 +4,7 @@ from ai_server.model.post_model import PostTransformationService
 
 router = APIRouter()
 
-@router.post("/", 
+@router.post("", 
     response_model=PostResponse,
     responses={
         200: {"model": PostResponse, "description": "Successfully transformed text"},

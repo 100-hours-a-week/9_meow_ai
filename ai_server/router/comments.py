@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException
 from ai_server.schemas.converter_schemas import CommentRequest, CommentResponse
-from ai_server.service.cat import cat_converter
-from ai_server.service.dog import dog_converter
+from ai_server.model.cat import cat_converter
+from ai_server.model.dog import dog_converter
 
 router = APIRouter()
 
-@router.post("/", 
+@router.post("", 
     response_model=CommentResponse,
     responses={
         200: {"model": CommentResponse, "description": "Successfully transformed text"},
