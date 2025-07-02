@@ -51,6 +51,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app/ai_server ai_server
 COPY --from=builder /app/scripts scripts
 
+# 스크립트 실행 권한 부여
+RUN chmod +x scripts/direct_vllm_start.sh
+
 # supervisord 설정 파일 생성 (최적화된 버전)
 RUN mkdir -p /etc/supervisor/conf.d && \
     { \
@@ -60,21 +63,26 @@ RUN mkdir -p /etc/supervisor/conf.d && \
       echo 'logfile_maxbytes=0'; \
       echo 'loglevel=info'; \
       echo '[program:vllm]'; \
-      echo 'command=python3 -u scripts/model_manager.py start'; \
+      echo 'command=bash scripts/direct_vllm_start.sh'; \
       echo 'autostart=true'; \
-      echo 'autorestart=true'; \
+      echo 'autorestart=false'; \
+      echo 'startretries=1'; \
+      echo 'exitcodes=0'; \
       echo 'stdout_logfile=/dev/stdout'; \
       echo 'stdout_logfile_maxbytes=0'; \
       echo 'stderr_logfile=/dev/stderr'; \
       echo 'stderr_logfile_maxbytes=0'; \
+      echo 'priority=100'; \
       echo '[program:fastapi]'; \
       echo 'command=python3 -u -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1'; \
       echo 'autostart=true'; \
       echo 'autorestart=true'; \
+      echo 'startretries=3'; \
       echo 'stdout_logfile=/dev/stdout'; \
       echo 'stdout_logfile_maxbytes=0'; \
       echo 'stderr_logfile=/dev/stderr'; \
       echo 'stderr_logfile_maxbytes=0'; \
+      echo 'priority=200'; \
     } > /etc/supervisor/conf.d/app.conf
 
 # 환경변수
