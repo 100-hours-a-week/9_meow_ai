@@ -50,14 +50,17 @@ class VLLMLauncher:
         try:
             args = ["python", "-m", "vllm.entrypoints.openai.api_server"] + self.server_args.get_server_args()
             
+            # 실행할 명령어 로그 출력
+            logger.info(f"vLLM 서버 시작 명령어: {' '.join(args)}")
+            
             self.process = subprocess.Popen(
                 args,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-                universal_newlines=True
+                stdout=None,
+                stderr=None,
+                text=True
             )
+            
+            logger.info(f"vLLM 프로세스 시작됨. PID: {self.process.pid}")
             
             # 서버 준비 대기
             if self._wait_for_server_ready():
@@ -65,6 +68,8 @@ class VLLMLauncher:
                 return True
             else:
                 logger.error("vLLM 서버 시작 실패")
+                if self.process and self.process.poll() is not None:
+                    logger.error(f"vLLM 프로세스가 exit code {self.process.poll()}로 종료됨")
                 self.stop_server()
                 return False
                 
