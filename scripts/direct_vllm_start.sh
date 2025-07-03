@@ -26,6 +26,8 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         --gpu-memory-utilization "${VLLM_GPU_MEMORY_UTILIZATION:-0.6}" \
         --max-model-len "${VLLM_MAX_MODEL_LEN:-1536}" \
         --max-num-seqs "${VLLM_MAX_NUM_SEQS:-12}" \
+        --chunk-size "${VLLM_CHUNK_SIZE:-512}" \
+        --enable-chunked-prefill "${VLLM_ENABLE_CHUNKED_PREFILL:-true}" \
         --disable-log-requests \
         --trust-remote-code
     
