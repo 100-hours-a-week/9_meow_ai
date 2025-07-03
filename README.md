@@ -173,13 +173,13 @@ pytest tests/unit_test.py::test_post_transformation_service
 ## 🔧 성능 최적화
 
 ### GPU 메모리 설정
-- GPU 메모리 사용률: 80%
+- GPU 메모리 사용률: 60%
 - 최대 모델 길이: 1536 토큰
 - 동시 처리 시퀀스: 12개
 
 ### 환경변수로 조정
 ```bash
-export VLLM_GPU_MEMORY_UTILIZATION=0.8
+export VLLM_GPU_MEMORY_UTILIZATION=0.6
 export VLLM_MAX_MODEL_LEN=1536
 export VLLM_MAX_NUM_SEQS=12
 ```
