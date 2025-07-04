@@ -51,63 +51,109 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app/ai_server ai_server
 COPY --from=builder /app/scripts scripts
 
-# 스크립트 실행 권한 부여
-RUN chmod +x scripts/direct_vllm_start.sh
+# GPU 캐시 정리 스크립트 생성
+RUN mkdir -p /app/scripts && \
+    cat > /app/scripts/gpu_cache_cleanup.sh << 'EOF'
+#!/bin/bash
+echo "=== GPU 캐시 정리 시작 ==="
 
-# supervisord 설정 파일 생성 (최적화된 버전)
-RUN mkdir -p /etc/supervisor/conf.d && \
-    { \
-      echo '[supervisord]'; \
-      echo 'nodaemon=true'; \
-      echo 'logfile=/dev/null'; \
-      echo 'logfile_maxbytes=0'; \
-      echo 'loglevel=info'; \
-      echo '[program:vllm]'; \
-      echo 'command=bash scripts/direct_vllm_start.sh'; \
-      echo 'autostart=true'; \
-      echo 'autorestart=false'; \
-      echo 'startretries=1'; \
-      echo 'exitcodes=0'; \
-      echo 'stdout_logfile=/dev/stdout'; \
-      echo 'stdout_logfile_maxbytes=0'; \
-      echo 'stderr_logfile=/dev/stderr'; \
-      echo 'stderr_logfile_maxbytes=0'; \
-      echo 'priority=100'; \
-      echo '[program:fastapi]'; \
-      echo 'command=python3 -u -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1'; \
-      echo 'autostart=true'; \
-      echo 'autorestart=true'; \
-      echo 'startretries=3'; \
-      echo 'stdout_logfile=/dev/stdout'; \
-      echo 'stdout_logfile_maxbytes=0'; \
-      echo 'stderr_logfile=/dev/stderr'; \
-      echo 'stderr_logfile_maxbytes=0'; \
-      echo 'priority=200'; \
-    } > /etc/supervisor/conf.d/app.conf
+# 안전한 프로세스 정리 (Python 전체가 아닌 특정 프로세스만)
+echo "기존 vLLM 프로세스 정리 중..."
+pkill -f "vllm.entrypoints.openai.api_server" || true
+pkill -f "python.*vllm.*api_server" || true
+sleep 5
 
-# 환경변수
+# GPU 메모리 상태 확인
+echo "정리 전 GPU 메모리 상태:"
+nvidia-smi --query-gpu=memory.used,memory.free --format=csv,noheader || true
+
+# PyTorch 캐시 정리
+echo "PyTorch 캐시 정리 중..."
+python3 -c "
+import torch
+import gc
+try:
+    if torch.cuda.is_available():
+        print(f'CUDA 디바이스 수: {torch.cuda.device_count()}')
+        for i in range(torch.cuda.device_count()):
+            torch.cuda.set_device(i)
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+            print(f'GPU {i} 캐시 정리 완료')
+        # 강제 가비지 컬렉션
+        gc.collect()
+        torch.cuda.empty_cache()
+    else:
+        print('CUDA 사용 불가')
+except Exception as e:
+    print(f'캐시 정리 중 오류: {e}')
+" || true
+
+echo "정리 후 GPU 메모리 상태:"
+nvidia-smi --query-gpu=memory.used,memory.free --format=csv,noheader || true
+echo "=== GPU 캐시 정리 완료 ==="
+EOF
+
+# 환경변수 (일관성 있게 수정)
 ENV PYTHONPATH=/app \
     VLLM_MODEL_PATH="haebo/meow-clovax-v2" \
     VLLM_HOST="0.0.0.0" \
     VLLM_PORT="8001" \
     VLLM_SERVED_MODEL_NAME="meow-clovax-v2" \
-    VLLM_GPU_MEMORY_UTILIZATION="0.6" \
-    VLLM_MAX_MODEL_LEN="1536" \
-    VLLM_MAX_NUM_SEQS="12" \
+    VLLM_GPU_MEMORY_UTILIZATION="0.5" \
+    VLLM_MAX_MODEL_LEN="1024" \
+    VLLM_MAX_NUM_SEQS="8" \
+    VLLM_CHUNK_SIZE="512" \
     CUDA_VISIBLE_DEVICES=0 \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility \
     CUDA_MODULE_LOADING=LAZY \
-    PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128 \
+    PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64,garbage_collection_threshold:0.9 \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    VLLM_CHUNK_SIZE="512" \
-    VLLM_ENABLE_CHUNKED_PREFILL="true"
+    VLLM_ENABLE_CHUNKED_PREFILL="true" \
+    VLLM_ENABLE_PREFIX_CACHING="false"
 
 EXPOSE 8000 8001
 
 # 헬스체크
 HEALTHCHECK --interval=60s --timeout=15s --start-period=120s --retries=2 \
     CMD curl -f http://localhost:8000/health || exit 1
+
+# supervisord 설정 개선 (순차 실행 보장)
+RUN mkdir -p /etc/supervisor/conf.d /var/log/supervisor && \
+    { \
+      echo '[supervisord]'; \
+      echo 'nodaemon=true'; \
+      echo 'logfile=/var/log/supervisor/supervisord.log'; \
+      echo 'logfile_maxbytes=50MB'; \
+      echo 'loglevel=info'; \
+      echo '[program:cache-cleanup]'; \
+      echo 'command=bash /app/scripts/gpu_cache_cleanup.sh'; \
+      echo 'autostart=true'; \
+      echo 'autorestart=false'; \
+      echo 'startretries=3'; \
+      echo 'exitcodes=0'; \
+      echo 'priority=10'; \
+      echo 'stdout_logfile=/var/log/supervisor/cache_cleanup.log'; \
+      echo 'stderr_logfile=/var/log/supervisor/cache_cleanup_error.log'; \
+      echo '[program:vllm]'; \
+      echo 'command=bash scripts/direct_vllm_start.sh'; \
+      echo 'autostart=true'; \
+      echo 'autorestart=true'; \
+      echo 'startretries=3'; \
+      echo 'exitcodes=0'; \
+      echo 'priority=50'; \
+      echo 'stdout_logfile=/var/log/supervisor/vllm.log'; \
+      echo 'stderr_logfile=/var/log/supervisor/vllm_error.log'; \
+      echo '[program:fastapi]'; \
+      echo 'command=python3 -u -m uvicorn ai_server.main:app --host 0.0.0.0 --port 8000 --workers 1'; \
+      echo 'autostart=true'; \
+      echo 'autorestart=true'; \
+      echo 'startretries=5'; \
+      echo 'priority=100'; \
+      echo 'stdout_logfile=/var/log/supervisor/fastapi.log'; \
+      echo 'stderr_logfile=/var/log/supervisor/fastapi_error.log'; \
+    } > /etc/supervisor/conf.d/app.conf
 
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/app.conf"]
