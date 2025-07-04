@@ -26,12 +26,10 @@ class VLLMConfig(BaseSettings):
     )
     
     # 메모리 및 성능 설정
-    gpu_memory_utilization: float = Field(default=0.6, description="GPU 메모리 사용률")
-    max_model_len: int = Field(default=1536, description="최대 모델 길이")
-    max_num_batched_tokens: int = Field(default=1536, description="배치 토큰 수")
-    max_num_seqs: int = Field(default=12, description="동시 시퀀스 수")
-    chunk_size: int = Field(default=512, description="청크 크기")
-    enable_chunked_prefill: bool = Field(default=True, description="청크 프리필 활성화")
+    gpu_memory_utilization: float = Field(default=0.4, description="GPU 메모리 사용률")
+    max_model_len: int = Field(default=512, description="최대 모델 길이")
+    max_num_batched_tokens: int = Field(default=512, description="배치 토큰 수")
+    max_num_seqs: int = Field(default=4, description="동시 시퀀스 수")
 
 
 
@@ -59,8 +57,6 @@ class VLLMServerArgs:
             "--max-model-len", str(self.config.max_model_len),
             "--max-num-batched-tokens", str(self.config.max_num_batched_tokens),
             "--max-num-seqs", str(self.config.max_num_seqs),
-            "--chunk-size", str(self.config.chunk_size),
-            "--enable-chunked-prefill", str(self.config.enable_chunked_prefill),
             "--enable-prefix-caching", str(self.config.enable_prefix_caching),
             "--trust-remote-code"
         ]
