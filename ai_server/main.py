@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 # FastAPI 앱 초기화
 app = FastAPI(
-    title="AI Text Transformation Server",
-    description="SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하는 AI API 서버",
-    version="2.1.0",
+    title="AI Text Transformation & Image Search Server",
+    description="SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하고 유사 이미지를 검색하는 AI API 서버",
+    version="3.0.0",
     docs_url="/docs",
 )
 
@@ -84,9 +84,15 @@ app.include_router(api_router)
 async def root():
     """루트 엔드포인트 - 서버 상태 확인"""
     return {
-        "message": "SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하는 AI API 서버",
-        "version": "2.1.0",
-        "status": "healthy"
+        "message": "AI Text Transformation & Image Search Server",
+        "description": "SNS 포스팅/댓글/채팅을 고양이/강아지 말투로 변환하고 유사 이미지를 검색하는 AI API 서버",
+        "version": "3.0.0",
+        "status": "healthy",
+        "features": [
+            "텍스트 변환 (고양이/강아지 말투)",
+            "이미지 유사도 검색 (CLIP 기반)",
+            "벡터 데이터베이스 (ChromaDB)"
+        ]
     }
 
 # 헬스체크 엔드포인트
