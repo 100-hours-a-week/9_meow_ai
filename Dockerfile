@@ -57,48 +57,8 @@ COPY --from=builder /app/scripts scripts
 COPY --from=builder /app/data data
 COPY --from=builder /app/image_embeddings_db image_embeddings_db
 
-# GPU 캐시 정리 스크립트 생성
-RUN mkdir -p /app/scripts && \
-    cat > /app/scripts/gpu_cache_cleanup.sh << 'EOF'
-#!/bin/bash
-echo "=== GPU 캐시 정리 시작 ==="
-
-# 안전한 프로세스 정리 (Python 전체가 아닌 특정 프로세스만)
-echo "기존 vLLM 프로세스 정리 중..."
-pkill -f "vllm.entrypoints.openai.api_server" || true
-pkill -f "python.*vllm.*api_server" || true
-sleep 5
-
-# GPU 메모리 상태 확인
-echo "정리 전 GPU 메모리 상태:"
-nvidia-smi --query-gpu=memory.used,memory.free --format=csv,noheader || true
-
-# PyTorch 캐시 정리
-echo "PyTorch 캐시 정리 중..."
-python3 -c "
-import torch
-import gc
-try:
-    if torch.cuda.is_available():
-        print(f'CUDA 디바이스 수: {torch.cuda.device_count()}')
-        for i in range(torch.cuda.device_count()):
-            torch.cuda.set_device(i)
-            torch.cuda.empty_cache()
-            torch.cuda.synchronize()
-            print(f'GPU {i} 캐시 정리 완료')
-        # 강제 가비지 컬렉션
-        gc.collect()
-        torch.cuda.empty_cache()
-    else:
-        print('CUDA 사용 불가')
-except Exception as e:
-    print(f'캐시 정리 중 오류: {e}')
-" || true
-
-echo "정리 후 GPU 메모리 상태:"
-nvidia-smi --query-gpu=memory.used,memory.free --format=csv,noheader || true
-echo "=== GPU 캐시 정리 완료 ==="
-EOF
+# GPU 캐시 정리 스크립트 실행 권한 부여
+RUN chmod +x /app/scripts/gpu_cache_cleanup.sh
 
 # 환경변수 (일관성 있게 수정)
 ENV PYTHONPATH=/app \
@@ -106,19 +66,17 @@ ENV PYTHONPATH=/app \
     VLLM_HOST="0.0.0.0" \
     VLLM_PORT="8001" \
     VLLM_SERVED_MODEL_NAME="meow-clovax-v2" \
-    VLLM_GPU_MEMORY_UTILIZATION="0.5" \
-    VLLM_MAX_MODEL_LEN="1024" \
-    VLLM_MAX_NUM_SEQS="8" \
-    VLLM_CHUNK_SIZE="512" \
+    VLLM_GPU_MEMORY_UTILIZATION="0.4" \
+    VLLM_MAX_MODEL_LEN="512" \
+    VLLM_MAX_NUM_BATCHED_TOKENS="512" \
+    VLLM_MAX_NUM_SEQS="4" \
     CUDA_VISIBLE_DEVICES=0 \
     NVIDIA_VISIBLE_DEVICES=all \
     NVIDIA_DRIVER_CAPABILITIES=compute,utility \
     CUDA_MODULE_LOADING=LAZY \
     PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64,garbage_collection_threshold:0.9 \
     PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    VLLM_ENABLE_CHUNKED_PREFILL="true" \
-    VLLM_ENABLE_PREFIX_CACHING="false"
+    PYTHONDONTWRITEBYTECODE=1
 
 EXPOSE 8000 8001
 
