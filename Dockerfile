@@ -27,6 +27,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 프로젝트 파일 복사
 COPY ai_server ai_server
 COPY scripts scripts
+COPY data data
+
+# 이미지 데이터베이스 구축 (빌드 시 한 번만 실행)
+RUN python ai_server/scripts/build_image_database.py
 
 # 런타임 스테이지 - CUDA 12.1.1 런타임
 FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
@@ -50,6 +54,8 @@ COPY --from=builder /usr/local/lib/python3.10/dist-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin  
 COPY --from=builder /app/ai_server ai_server
 COPY --from=builder /app/scripts scripts
+COPY --from=builder /app/data data
+COPY --from=builder /app/image_embeddings_db image_embeddings_db
 
 # GPU 캐시 정리 스크립트 생성
 RUN mkdir -p /app/scripts && \
