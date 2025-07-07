@@ -47,7 +47,7 @@ async def search_similar_images(
             n_results=request.n_results
         )
         
-        logger.info(f"✅ Image search completed: {len(similar_images)} results")
+        logger.info(f"Image search completed: {len(similar_images)} results")
         
         return ImageSearchResponse(
             status_code=200,
@@ -56,13 +56,13 @@ async def search_similar_images(
         )
         
     except ValueError as e:
-        logger.warning(f"⚠️ Validation error: {e}")
+        logger.warning(f"Validation error: {e}")
         raise HTTPException(
             status_code=400,
             detail=str(e)
         )
     except Exception as e:
-        logger.error(f"❌ Image search failed: {e}")
+        logger.error(f"Image search failed: {e}")
         raise HTTPException(
             status_code=500,
             detail="이미지 검색 중 오류가 발생했습니다"
