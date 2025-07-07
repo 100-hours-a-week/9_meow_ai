@@ -29,8 +29,8 @@ COPY ai_server ai_server
 COPY scripts scripts
 COPY data data
 
-# 이미지 데이터베이스 구축 (빌드 시 한 번만 실행)
-RUN python ai_server/scripts/build_image_database.py
+# 이미지 데이터베이스 구축은 런타임에 수행
+# (빌드 시 hang 방지를 위해 제거)
 
 # 런타임 스테이지 - CUDA 12.1.1 런타임
 FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
@@ -55,7 +55,6 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /app/ai_server ai_server
 COPY --from=builder /app/scripts scripts
 COPY --from=builder /app/data data
-COPY --from=builder /app/image_embeddings_db image_embeddings_db
 
 # GPU 캐시 정리 스크립트 실행 권한 부여
 RUN chmod +x /app/scripts/gpu_cache_cleanup.sh
