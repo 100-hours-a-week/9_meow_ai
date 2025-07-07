@@ -5,6 +5,7 @@ from PIL import Image
 from io import BytesIO
 from transformers import CLIPProcessor, CLIPModel
 import chromadb
+from chromadb.errors import NotFoundError
 from typing import List, Optional, Dict
 import logging
 import os
@@ -51,13 +52,13 @@ class ImageSearchService:
         """CLIP 모델 초기화 (한 번만 실행)"""
         try:
             if self.model is None:
-                logger.info("🚀 Loading CLIP model...")
+                logger.info("Loading CLIP model...")
                 self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
                 self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
                 self.model.eval()
-                logger.info("✅ CLIP model loaded successfully")
+                logger.info("CLIP model loaded successfully")
         except Exception as e:
-            logger.error(f"❌ CLIP model initialization failed: {e}")
+            logger.error(f"CLIP model initialization failed: {e}")
             raise
     
     def _ensure_chromadb_initialized(self, animal_type: str):
@@ -71,7 +72,7 @@ class ImageSearchService:
                 return
             
             try:
-                logger.info(f"🔄 Initializing ChromaDB for {animal_type}...")
+                logger.info(f"Initializing ChromaDB for {animal_type}...")
                 db_path = f"{self.db_base_path}/{animal_type}_db"
                 
                 # 디렉토리가 없으면 생성
@@ -85,21 +86,21 @@ class ImageSearchService:
                 collection_name = f"{animal_type}_images"
                 try:
                     collection = client.get_collection(collection_name)
-                    logger.info(f"📁 Found existing {animal_type} collection")
-                except ValueError:
+                    logger.info(f"Found existing {animal_type} collection")
+                except NotFoundError:
                     # 컬렉션이 없으면 생성
                     collection = client.create_collection(
                         name=collection_name,
                         metadata={"hnsw:space": "cosine"}
                     )
-                    logger.info(f"🆕 Created new {animal_type} collection")
+                    logger.info(f"Created new {animal_type} collection")
                 
                 self.collections[animal_type] = collection
                 self._initialized_animals.add(animal_type)
-                logger.info(f"✅ {animal_type.capitalize()} ChromaDB initialized")
+                logger.info(f"{animal_type.capitalize()} ChromaDB initialized")
                 
             except Exception as e:
-                logger.error(f"❌ ChromaDB initialization failed for {animal_type}: {e}")
+                logger.error(f"ChromaDB initialization failed for {animal_type}: {e}")
                 raise
 
     def download_image_from_url(self, image_url: str) -> Image.Image:
@@ -127,20 +128,20 @@ class ImageSearchService:
             if image.size[0] < 32 or image.size[1] < 32:
                 raise ValueError("이미지가 너무 작습니다 (최소 32x32)")
             
-            logger.debug(f"✅ Image downloaded: {image.size}")
+            logger.debug(f"Image downloaded: {image.size}")
             return image
             
         except requests.exceptions.Timeout:
-            logger.warning(f"⏰ Image download timeout: {image_url}")
+            logger.warning(f"Image download timeout: {image_url}")
             raise ValueError("이미지 다운로드 시간 초과 (5초)")
         except requests.exceptions.SSLError:
-            logger.warning(f"🔒 SSL verification failed: {image_url}")
+            logger.warning(f"SSL verification failed: {image_url}")
             raise ValueError("SSL 인증서 검증 실패")
         except requests.exceptions.RequestException as e:
-            logger.error(f"🌐 Network error downloading image: {e}")
+            logger.error(f"Network error downloading image: {e}")
             raise ValueError(f"이미지 다운로드 네트워크 오류: {e}")
         except Exception as e:
-            logger.error(f"❌ Image download failed: {e}")
+            logger.error(f"Image download failed: {e}")
             raise ValueError(f"이미지 다운로드 실패: {e}")
 
     def extract_query_embedding(self, image: Image.Image) -> np.ndarray:
@@ -157,7 +158,7 @@ class ImageSearchService:
             
             return embedding
         except Exception as e:
-            logger.error(f"❌ Embedding extraction failed: {e}")
+            logger.error(f"Embedding extraction failed: {e}")
             raise
 
     def search_chromadb(self, query_embedding: np.ndarray, animal_type: str, n_results: int = 3) -> List[str]:
@@ -180,7 +181,7 @@ class ImageSearchService:
             return image_urls
             
         except Exception as e:
-            logger.error(f"❌ ChromaDB search failed: {e}")
+            logger.error(f"ChromaDB search failed: {e}")
             raise
 
     def search_similar_images(self, image_url: str, animal_type: str, n_results: int = 3) -> List[str]:
@@ -210,18 +211,55 @@ class ImageSearchService:
             similar_urls = self.search_chromadb(query_embedding, animal_type, n_results)
             
             elapsed_time = time.time() - start_time
-            logger.info(f"✅ Found {len(similar_urls)} similar images for {animal_type} in {elapsed_time:.2f}s")
+            logger.info(f"Found {len(similar_urls)} similar images for {animal_type} in {elapsed_time:.2f}s")
             return similar_urls
             
         except Exception as e:
             elapsed_time = time.time() - start_time
-            logger.error(f"❌ Image search failed in {elapsed_time:.2f}s: {e}")
+            logger.error(f"Image search failed in {elapsed_time:.2f}s: {e}")
             raise
     
+    def cleanup(self):
+        """모든 리소스 명시적 정리"""
+        try:
+            logger.info("Cleaning up resources...")
+            
+            # HTTP 세션 정리
+            if hasattr(self, 'session') and self.session:
+                self.session.close()
+                logger.info("HTTP session closed")
+            
+            # ChromaDB 클라이언트 정리
+            for animal_type, client in self.clients.items():
+                try:
+                    # ChromaDB는 명시적 close 메서드가 없으므로 참조만 제거
+                    logger.info(f"ChromaDB client for {animal_type} cleaned up")
+                except Exception as e:
+                    logger.warning(f"Error cleaning ChromaDB client for {animal_type}: {e}")
+            
+            # 컬렉션과 클라이언트 참조 정리
+            self.collections.clear()
+            self.clients.clear()
+            self._initialized_animals.clear()
+            
+            # PyTorch 캐시 정리
+            if hasattr(self, 'model') and self.model:
+                try:
+                    import torch
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    logger.info("PyTorch cache cleared")
+                except Exception as e:
+                    logger.warning(f"Error clearing PyTorch cache: {e}")
+            
+            logger.info("Resource cleanup completed")
+            
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+    
     def __del__(self):
-        """소멸자: HTTP 세션 정리"""
-        if hasattr(self, 'session'):
-            self.session.close()
+        """소멸자: 모든 리소스 정리"""
+        self.cleanup()
 
 
 # 전역 인스턴스 (스레드 안전 싱글톤 패턴)
