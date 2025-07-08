@@ -61,13 +61,13 @@ RUN chmod +x /app/scripts/gpu_cache_cleanup.sh
 
 # 환경변수 (일관성 있게 수정)
 ENV PYTHONPATH=/app \
-    VLLM_MODEL_PATH="haebo/meow-clovax-v2" \
+    VLLM_MODEL_PATH="haebo/meow-clovax-v3" \
     VLLM_HOST="0.0.0.0" \
     VLLM_PORT="8001" \
-    VLLM_SERVED_MODEL_NAME="meow-clovax-v2" \
+    VLLM_SERVED_MODEL_NAME="meow-clovax-v3" \
     VLLM_GPU_MEMORY_UTILIZATION="0.4" \
-    VLLM_MAX_MODEL_LEN="1024" \
-    VLLM_MAX_NUM_BATCHED_TOKENS="1024" \
+    VLLM_MAX_MODEL_LEN="512" \
+    VLLM_MAX_NUM_BATCHED_TOKENS="512" \
     VLLM_MAX_NUM_SEQS="4" \
     CUDA_VISIBLE_DEVICES=0 \
     NVIDIA_VISIBLE_DEVICES=all \
