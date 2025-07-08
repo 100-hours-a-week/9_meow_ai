@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from ai_server.schemas.converter_schemas import CommentRequest, CommentResponse
-from ai_server.model.cat import cat_converter
-from ai_server.model.dog import dog_converter
+from ai_server.model.comment_model import CommentTransformationService
 
 router = APIRouter()
 
@@ -10,7 +9,7 @@ router = APIRouter()
     responses={
         200: {"model": CommentResponse, "description": "Successfully transformed text"},
         400: {"model": CommentResponse, "description": "Empty Input"},
-        422: {"model": CommentResponse, "description": "wrong post_type"},
+        422: {"model": CommentResponse, "description": "wrong post_type or emotion"},
         500: {"model": CommentResponse, "description": "internal_server_error"}
     }
 )
@@ -21,13 +20,13 @@ async def generate_comment(request: CommentRequest):
         raise HTTPException(status_code=400, detail="Empty Input")
 
     try:
-        # post_type에 따라 적절한 변환기 선택하게
-        if request.post_type == "cat":
-            transformed_content = cat_converter(request.content)
-        elif request.post_type == "dog":
-            transformed_content = dog_converter(request.content)
-        else:
-            raise HTTPException(status_code=422, detail="wrong post_type")
+        # CommentTransformationService를 사용하여 vLLM 추론 로직 적용
+        comment_service = CommentTransformationService()
+        transformed_content = await comment_service.transform_comment(
+            content=request.content,
+            emotion=request.emotion,
+            post_type=request.post_type
+        )
         
         # 성공 응답
         return CommentResponse(
@@ -38,8 +37,8 @@ async def generate_comment(request: CommentRequest):
         
     except ValueError as ve:
         # Enum 값이 잘못된 경우 등
-        if "Enum" in str(ve) or "post_type" in str(ve):
-            raise HTTPException(status_code=422, detail="wrong post_type")
+        if "Enum" in str(ve) or "post_type" in str(ve) or "emotion" in str(ve):
+            raise HTTPException(status_code=422, detail="wrong post_type or emotion")
         else:
             raise
 
