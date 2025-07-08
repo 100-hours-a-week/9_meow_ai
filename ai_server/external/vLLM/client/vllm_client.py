@@ -25,7 +25,7 @@ class VLLMAsyncClient:
     
     def __init__(self, base_url: str = "http://localhost:8001"):
         self.base_url = base_url.rstrip("/")
-        self.model_name = "meow-clovax-v2" 
+        self.model_name = "meow-clovax-v3" 
         self._client: Optional[httpx.AsyncClient] = None
     
     @property
