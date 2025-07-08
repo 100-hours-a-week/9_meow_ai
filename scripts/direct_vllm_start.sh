@@ -7,7 +7,7 @@
 source "$(dirname "$0")/gpu_cache_cleanup.sh"
 
 echo "=== vLLM 직접 시작 스크립트 ==="
-echo "모델: ${VLLM_MODEL_PATH:-haebo/meow-clovax-v2}"
+echo "모델: ${VLLM_MODEL_PATH:-haebo/meow-clovax-v3}"
 echo "포트: ${VLLM_PORT:-8001}"
 
 # 메모리 임계값 설정
@@ -59,16 +59,13 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     
     # vLLM 서버 시작
     python -m vllm.entrypoints.openai.api_server \
-        --model "${VLLM_MODEL_PATH:-haebo/meow-clovax-v2}" \
+        --model "${VLLM_MODEL_PATH:-haebo/meow-clovax-v3}" \
         --host "${VLLM_HOST:-0.0.0.0}" \
         --port "${VLLM_PORT:-8001}" \
-        --served-model-name "${VLLM_SERVED_MODEL_NAME:-meow-clovax-v2}" \
+        --served-model-name "${VLLM_SERVED_MODEL_NAME:-meow-clovax-v3}" \
         --gpu-memory-utilization "${VLLM_GPU_MEMORY_UTILIZATION:-0.4}" \
         --max-model-len "${VLLM_MAX_MODEL_LEN:-512}" \
-        --max-num-seqs "${VLLM_MAX_NUM_SEQS:-4}" \
-        --enable-chunked-prefill \
-        --disable-log-requests \
-        --trust-remote-code &
+        --max-num-seqs "${VLLM_MAX_NUM_SEQS:-4}" &
     
     # PID 저장
     VLLM_PID=$!
