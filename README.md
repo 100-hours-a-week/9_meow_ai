@@ -53,7 +53,7 @@ python scripts/model_manager.py start
 
 **동작 과정:**
 - 허깅페이스에서 모델 자동 다운로드 (첫 실행 시)
-- `haebo/meow-clovax-v2` 모델 로드
+- `haebo/meow-clovax-v3` 모델 로드
 - 서버 실행: http://localhost:8001
 
 ### 2단계: FastAPI 서버 시작 (새 터미널 2)
@@ -230,7 +230,7 @@ pytest tests/unit_test.py::test_post_transformation_service
 ## 📝 모델 정보
 
 ### 텍스트 변환 모델
-- **모델**: haebo/Meow-HyperCLOVAX-1.5B_SFT-FFT_fp32_0629fe
+- **모델**: haebo/meow-clovax-v3
 - **타입**: 풀 파인튜닝 모델
 - **용도**: 한국어 텍스트를 고양이/강아지 말투로 변환
 - **기반**: HyperCLOVA-X 1.5B
