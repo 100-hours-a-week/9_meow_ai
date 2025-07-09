@@ -56,8 +56,8 @@ def raccoon_converter(text):
     result = re.sub(r'심심해', '심심하구리...', result)
     result = re.sub(r'심심하다', '심심하구리...', result)
 
-    result = re.sub(r'냐(멍|개|옹|왈)', '냐구리', result)
-    result = re.sub(r'다(옹|멍|개|왈|냥)', '다굴', result)
+    result = re.sub(r'냐(멍|개|옹|왈|쮸|찍|몽|끼끼)', '냐구리', result)
+    result = re.sub(r'다(옹|멍|개|왈|냥|쮸|찍|몽|끼끼)', '다굴', result)
     result = re.sub(r'다\b', '다굴', result)
     result = re.sub(r'요\b', '요구리', result)
 
