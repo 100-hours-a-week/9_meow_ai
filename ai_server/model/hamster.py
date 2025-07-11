@@ -23,6 +23,43 @@ def hamster_converter(text):
     
     # 2. "안녕" → "햄하" 변환
     result = re.sub(r'안녕(?![하히])', '햄하', result)
+    
+    # 새로운 패턴들 추가
+    # '헐' → '헐찍찍' 변환
+    result = re.sub(r'(?<![가-힣])헐(?![가-힣])', '헐찍찍', result)
+    
+    # '드립니다' → '드립니다쮸' 변환
+    result = re.sub(r'([가-힣]+)드립니다(?=[!?\s.,]|$)', r'\1드립니다쮸', result)
+    
+    # 강조 부사 변환들
+    result = re.sub(r'(\s)완전([\s가-힣])', r'\1완전찍\2', result)  # 완전 → 찍전
+    result = re.sub(r'(\s)진짜([\s가-힣])', r'\1진짜찍\2', result)  # 진짜 → 찍짜  
+    result = re.sub(r'(\s)정말([\s가-힣])', r'\1정말찍\2', result)  # 정말 → 찍말
+    result = re.sub(r'(\s)엄청([\s가-힣])', r'\1엄청찍\2', result)  # 엄청 → 찍청
+    result = re.sub(r'(\s)되게([\s가-힣])', r'\1되게찍\2', result)  # 되게 → 찍게
+    result = re.sub(r'(\s)너무([\s가-힣])', r'\1너무찍\2', result)  # 너무 → 찍무
+    result = re.sub(r'(\s)매우([\s가-힣])', r'\1매우찍\2', result)  # 매우 → 찍우
+    result = re.sub(r'(\s)많이([\s가-힣])', r'\1많이찍\2', result)  # 많이 → 찍이
+    result = re.sub(r'(\s)조금([\s가-힣])', r'\1조금찍\2', result)  # 조금 → 찍금
+    
+    # '좋아' → '찍좋아' 변환
+    result = re.sub(r'(?<![가-힣])좋아(?=[!?\s.,]|$)', '찍좋아', result)
+    result = re.sub(r'(?<![가-힣])좋아요(?=[!?\s.,]|$)', '찍좋아요', result)
+    
+    # '졸려' 관련 변환
+    result = re.sub(r'(?<![가-힣])졸려(?=[!?\s.,]|$)', '찍졸려', result)
+    result = re.sub(r'(?<![가-힣])졸려요(?=[!?\s.,]|$)', '찍졸려요', result)
+    
+    # '대박' → '찍대박' 변환
+    result = re.sub(r'(?<![가-힣])대박(?=[!?\s.,]|$)', '찍대박', result)
+    
+    # '~싶어' → '~싶쮸' 변환
+    result = re.sub(r'([가-힣]+)싶어(?=[!?\s.,]|$)', r'\1싶쮸', result)
+    result = re.sub(r'([가-힣]+)싶어요(?=[!?\s.,]|$)', r'\1싶쮸요', result)
+    
+    # 'ㄱㄱ' → '고고찍' 변환
+    result = re.sub(r'ㄱㄱ', '고고찍', result)
+    
     result = re.sub(r'바이', '햄바', result)
     result = re.sub(r'빠이', '햄빠', result)    
     # 3. "하이" → "햄하" 변환 (새로 추가)
@@ -86,7 +123,7 @@ def hamster_converter(text):
     
     # 8. 자음 조합 변환 (긴 패턴부터 먼저 처리)
     result = re.sub(r'(ㅎㅇㅌ|화이팅|파이팅)', '햄이팅', result)  # ㅎㅇ보다 먼저 처리
-    result = re.sub(r'ㅎㅇ', '찍하', result)
+    result = re.sub(r'ㅎㅇ', '하이다쮸~', result)  # ㅎㅇ → 하이다쮸~ 변환
     result = re.sub(r'ㅇㅁ', '어머찍', result)
     result = re.sub(r'ㅁㅇ', '모야찍', result)
     result = re.sub(r'ㄱㅊ', '괜찮찍', result)  # 

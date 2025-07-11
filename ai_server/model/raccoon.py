@@ -23,6 +23,43 @@ def raccoon_converter(text):
     
     # 2. "안녕" → "굴하" 변환
     result = re.sub(r'안녕', '구리구리안녕구리', result)
+    
+    # 새로운 패턴들 추가
+    # '헐' → '헐구리구리' 변환
+    result = re.sub(r'(?<![가-힣])헐(?![가-힣])', '헐구리구리', result)
+    
+    # '드립니다' → '드립니다구리' 변환
+    result = re.sub(r'([가-힣]+)드립니다(?=[!?\s.,]|$)', r'\1드립니다구리', result)
+    
+    # 강조 부사 변환들
+    result = re.sub(r'(\s)완전([\s가-힣])', r'\1완전구리\2', result)  # 완전 → 구리전
+    result = re.sub(r'(\s)진짜([\s가-힣])', r'\1진짜구리\2', result)  # 진짜 → 구리짜  
+    result = re.sub(r'(\s)정말([\s가-힣])', r'\1정말구리\2', result)  # 정말 → 구리말
+    result = re.sub(r'(\s)엄청([\s가-힣])', r'\1엄청구리\2', result)  # 엄청 → 구리청
+    result = re.sub(r'(\s)되게([\s가-힣])', r'\1되게구리\2', result)  # 되게 → 구리게
+    result = re.sub(r'(\s)너무([\s가-힣])', r'\1너무구리\2', result)  # 너무 → 구리무
+    result = re.sub(r'(\s)매우([\s가-힣])', r'\1매우구리\2', result)  # 매우 → 구리우
+    result = re.sub(r'(\s)많이([\s가-힣])', r'\1많이구리\2', result)  # 많이 → 구리이
+    result = re.sub(r'(\s)조금([\s가-힣])', r'\1조금구리\2', result)  # 조금 → 구리금
+    
+    # '좋아' → '구리좋아' 변환
+    result = re.sub(r'(?<![가-힣])좋아(?=[!?\s.,]|$)', '구리좋아', result)
+    result = re.sub(r'(?<![가-힣])좋아요(?=[!?\s.,]|$)', '구리좋아요', result)
+    
+    # '졸려' 관련 변환
+    result = re.sub(r'(?<![가-힣])졸려(?=[!?\s.,]|$)', '구리졸려', result)
+    result = re.sub(r'(?<![가-힣])졸려요(?=[!?\s.,]|$)', '구리졸려요', result)
+    
+    # '대박' → '구리대박' 변환
+    result = re.sub(r'(?<![가-힣])대박(?=[!?\s.,]|$)', '구리대박', result)
+    
+    # '~싶어' → '~싶구리' 변환
+    result = re.sub(r'([가-힣]+)싶어(?=[!?\s.,]|$)', r'\1싶구리', result)
+    result = re.sub(r'([가-힣]+)싶어요(?=[!?\s.,]|$)', r'\1싶구리요', result)
+    
+    # 'ㄱㄱ' → '고고구리' 변환
+    result = re.sub(r'ㄱㄱ', '고고구리', result)
+    
     # 3. "하이" → "냥하" 변환 (새로 추가)
     result = re.sub(r'하이', '구리구리하이구리', result)
     result = re.sub(r'바이', '구리구리바이구리', result)
@@ -89,7 +126,7 @@ def raccoon_converter(text):
 
         # 8. 자음 조합 변환 (긴 패턴부터 먼저 처리)
     result = re.sub(r'(ㅎㅇㅌ|화이팅|파이팅)', '너굴팅', result)  # ㅎㅇ보다 먼저 처리
-    result = re.sub(r'ㅎㅇ', '구리구리하이구리!', result)
+    result = re.sub(r'ㅎㅇ', '하이다구리~', result)  # ㅎㅇ → 하이다구리~ 변환
     result = re.sub(r'ㅇㅁ', '어머너굴', result)
     result = re.sub(r'ㅁㅇ', '모야너굴', result)
     result = re.sub(r'(ㄱㅊ|괜찮)', '괜찮너굴', result)

@@ -37,6 +37,39 @@ def cat_converter(text):
     # '헐' → '먀아' 변환
     result = re.sub(r'(?<![가-힣])헐(?![가-힣])', '먀아', result)
     
+    # '드립니다' → '드립니다냥' 변환
+    result = re.sub(r'([가-힣]+)드립니다(?=[!?\s.,]|$)', r'\1드립니다냥', result)
+    
+    # 강조 부사 변환들
+    result = re.sub(r'(\s)완전([\s가-힣])', r'\1냥전\2', result)  # 완전 → 냥전
+    result = re.sub(r'(\s)진짜([\s가-힣])', r'\1냥짜\2', result)  # 진짜 → 냥짜  
+    result = re.sub(r'(\s)정말([\s가-힣])', r'\1냥말\2', result)  # 정말 → 냥말
+    result = re.sub(r'(\s)엄청([\s가-힣])', r'\1냥청\2', result)  # 엄청 → 냥청
+    result = re.sub(r'(\s)되게([\s가-힣])', r'\1냥게\2', result)  # 되게 → 냥게
+    result = re.sub(r'(\s)너무([\s가-힣])', r'\1냥무\2', result)  # 너무 → 냥무
+    result = re.sub(r'(\s)매우([\s가-힣])', r'\1냥우\2', result)  # 매우 → 냥우
+    result = re.sub(r'(\s)많이([\s가-힣])', r'\1냥이\2', result)  # 많이 → 냥이
+    result = re.sub(r'(\s)조금([\s가-힣])', r'\1냥금\2', result)  # 조금 → 냥금
+    result = re.sub(r'(\s)좀([\s가-힣])', r'\1냥\2', result)      # 좀 → 냥
+    
+    # '좋아' → '냥좋아' 변환
+    result = re.sub(r'(?<![가-힣])좋아(?=[!?\s.,]|$)', '냥좋아', result)
+    result = re.sub(r'(?<![가-힣])좋아요(?=[!?\s.,]|$)', '냥좋아요', result)
+    
+    # '졸려' 관련 변환
+    result = re.sub(r'(?<![가-힣])졸려(?=[!?\s.,]|$)', '냥졸려', result)
+    result = re.sub(r'(?<![가-힣])졸려요(?=[!?\s.,]|$)', '냥졸려요', result)
+    
+    # '대박' → '냥대박' 변환
+    result = re.sub(r'(?<![가-힣])대박(?=[!?\s.,]|$)', '냥대박', result)
+    
+    # '~싶어' → '~싶냥' 변환
+    result = re.sub(r'([가-힣]+)싶어(?=[!?\s.,]|$)', r'\1싶냥', result)
+    result = re.sub(r'([가-힣]+)싶어요(?=[!?\s.,]|$)', r'\1싶냥요', result)
+    
+    # 'ㄱㄱ' → '고고냥' 변환
+    result = re.sub(r'ㄱㄱ', '고고냥', result)
+    
     # '하,' 또는 '하.' → '냐아,' 또는 '냐아.' 변환 (쉼표/마침표가 붙은 경우만)
     result = re.sub(r'(?<![가-힣])하([,.])', r'냐아\1', result)
     
@@ -96,7 +129,7 @@ def cat_converter(text):
     
     # 8. 자음 조합 변환 (긴 패턴부터 먼저 처리)
     result = re.sub(r'ㅎㅇㅌ', '냥이팅', result)  # ㅎㅇ보다 먼저 처리
-    result = re.sub(r'ㅎㅇ', '냥하', result)
+    result = re.sub(r'ㅎㅇ', '하이다냥~', result)  # ㅎㅇ → 하이다냥~ 변환
     result = re.sub(r'ㅇㅁ', '어머냥', result)
     result = re.sub(r'ㅁㅇ', '모냥', result)
     result = re.sub(r'ㄱㅊ', '괜찮냥', result)  # ㄱㅊ → 괜찮냥
