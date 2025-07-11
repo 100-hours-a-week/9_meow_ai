@@ -25,6 +25,43 @@ def monkey_converter(text):
     
     # 2. "안녕" → "몽하" 변환
     result = re.sub(r'안녕\b', '몽하', result)
+    
+    # 새로운 패턴들 추가
+    # '헐' → '헐끼끼' 변환
+    result = re.sub(r'(?<![가-힣])헐(?![가-힣])', '헐끼끼', result)
+    
+    # '드립니다' → '드립니다끼끼' 변환
+    result = re.sub(r'([가-힣]+)드립니다(?=[!?\s.,]|$)', r'\1드립니다끼끼', result)
+    
+    # 강조 부사 변환들
+    result = re.sub(r'(\s)완전([\s가-힣])', r'\1완전끾끼\2', result)  # 완전 → 몽전
+    result = re.sub(r'(\s)진짜([\s가-힣])', r'\1진짜끼끼\2', result)  # 진짜 → 몽짜  
+    result = re.sub(r'(\s)정말([\s가-힣])', r'\1정말끼끼\2', result)  # 정말 → 몽말
+    result = re.sub(r'(\s)엄청([\s가-힣])', r'\1엄청끼끼\2', result)  # 엄청 → 몽청
+    result = re.sub(r'(\s)되게([\s가-힣])', r'\1되게끼끼\2', result)  # 되게 → 몽게
+    result = re.sub(r'(\s)너무([\s가-힣])', r'\1너무끼끼\2', result)  # 너무 → 몽무
+    result = re.sub(r'(\s)매우([\s가-힣])', r'\1매우끾끼\2', result)  # 매우 → 몽우
+    result = re.sub(r'(\s)많이([\s가-힣])', r'\1많이끾끼\2', result)  # 많이 → 몽이
+    result = re.sub(r'(\s)조금([\s가-힣])', r'\1조금끾끼\2', result)  # 조금 → 몽금
+    
+    # '좋아' → '몽좋아' 변환
+    result = re.sub(r'(?<![가-힣])좋아(?=[!?\s.,]|$)', '몽좋아', result)
+    result = re.sub(r'(?<![가-힣])좋아요(?=[!?\s.,]|$)', '몽좋아요', result)
+    
+    # '졸려' 관련 변환
+    result = re.sub(r'(?<![가-힣])졸려(?=[!?\s.,]|$)', '몽졸려', result)
+    result = re.sub(r'(?<![가-힣])졸려요(?=[!?\s.,]|$)', '몽졸려요', result)
+    
+    # '대박' → '몽대박' 변환
+    result = re.sub(r'(?<![가-힣])대박(?=[!?\s.,]|$)', '몽대박', result)
+    
+    # '~싶어' → '~싶끼끼' 변환
+    result = re.sub(r'([가-힣]+)싶어(?=[!?\s.,]|$)', r'\1싶끼끼', result)
+    result = re.sub(r'([가-힣]+)싶어요(?=[!?\s.,]|$)', r'\1싶끼끼요', result)
+    
+    # 'ㄱㄱ' → '고고끼끼' 변환
+    result = re.sub(r'ㄱㄱ', '고고끼끼', result)
+    
     # 3. "하이" → "몽하" 변환 (새로 추가)
     result = re.sub(r'하이', '몽하', result)
     result = re.sub(r'바이', '몽바', result)
@@ -35,7 +72,7 @@ def monkey_converter(text):
 
      # 자음 조합 변환 (긴 패턴부터 먼저 처리)
     result = re.sub(r'ㅎㅇㅌ', '몽이팅', result)  # ㅎㅇ보다 먼저 처리
-    result = re.sub(r'ㅎㅇ', '몽하', result)
+    result = re.sub(r'ㅎㅇ', '하이다끼끼~', result)  # ㅎㅇ → 하이다끼끼~ 변환
     result = re.sub(r'ㅇㅁ', '어머몽', result)
     result = re.sub(r'ㅁㅇ', '모냐몽', result)
     result = re.sub(r'ㄱㅊ', '괜찮몽', result)
