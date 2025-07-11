@@ -61,7 +61,18 @@ async def startup_event():
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 백엔드 주소
+    allow_origins=[
+        "http://localhost:5173",
+        "https://localhost:5173", 
+        "http://127.0.0.1:5173",
+        "https://127.0.0.1:5173",
+        "http://www.meowng.com",
+        "https://www.meowng.com",
+        "https://ds36vr51hmfa7.cloudfront.net",
+        "http://3.39.3.208",
+        "http://172.20.5.64:5173",
+        "http://testdev.meowng.com"
+    ],
     allow_credentials=True,
     allow_methods=["POST", "GET"],
     allow_headers=["*"]
