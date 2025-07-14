@@ -14,7 +14,7 @@ os.environ["ANONYMIZED_TELEMETRY"] = "False"
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from ai_server.services.image_search import ImageSearchService
+from ai_server.model.image_search import ImageSearchService
 
 # 로깅 설정
 logging.basicConfig(
