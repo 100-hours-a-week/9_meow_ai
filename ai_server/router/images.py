@@ -5,7 +5,7 @@ from ai_server.schemas.image_schemas import (
     ImageSearchResponse, 
     ErrorResponse
 )
-from ai_server.services.image_search import get_image_search_service, ImageSearchService
+from ai_server.model.image_search import get_image_search_service, ImageSearchService
 import logging
 from typing import List
 
