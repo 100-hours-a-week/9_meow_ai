@@ -72,6 +72,8 @@ app.add_middleware(
         "https://127.0.0.1:8080",
         "http://www.meowng.com",
         "https://www.meowng.com",
+	"http://meowng.com",
+	"https://meowng.com",
         "https://ds36vr51hmfa7.cloudfront.net",
         "http://3.39.3.208",
         "http://3.39.3.208:8080",
