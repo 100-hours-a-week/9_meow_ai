@@ -63,7 +63,7 @@ RUN chmod +x /app/scripts/gpu_cache_cleanup.sh
 ENV PYTHONPATH=/app \
     VLLM_MODEL_PATH="haebo/meow-clovax-v3" \
     VLLM_HOST="0.0.0.0" \
-    VLLM_PORT="8001" \
+    VLLM_PORT="8002" \
     VLLM_SERVED_MODEL_NAME="meow-clovax-v3" \
     VLLM_GPU_MEMORY_UTILIZATION="0.4" \
     VLLM_MAX_MODEL_LEN="512" \
@@ -77,7 +77,7 @@ ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-EXPOSE 8000 8001
+EXPOSE 8000 8002
 
 # 헬스체크
 HEALTHCHECK --interval=60s --timeout=15s --start-period=120s --retries=2 \

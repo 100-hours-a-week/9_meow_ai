@@ -13,7 +13,7 @@ class VLLMConfig(BaseSettings):
     
     # 서버 기본 설정
     host: str = Field(default="0.0.0.0", description="vLLM 서버 호스트")
-    port: int = Field(default=8001, description="vLLM 서버 포트")
+    port: int = Field(default=8002, description="vLLM 서버 포트")
     
     # 모델 설정
     model_path: str = Field(

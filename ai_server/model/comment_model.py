@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # comment 변환 서비스
 class CommentTransformationService:
-    def __init__(self, vllm_base_url: str = "http://localhost:8001"):
+    def __init__(self, vllm_base_url: str = "http://localhost:8002"):
         self.vllm_base_url = vllm_base_url
         self.inference_config = get_inference_config()
         

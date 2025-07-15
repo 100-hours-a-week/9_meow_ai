@@ -54,7 +54,7 @@ python scripts/model_manager.py start
 **동작 과정:**
 - 허깅페이스에서 모델 자동 다운로드 (첫 실행 시)
 - `haebo/meow-clovax-v3` 모델 로드
-- 서버 실행: http://localhost:8001
+- 서버 실행: http://localhost:8002
 
 ### 2단계: FastAPI 서버 시작 (새 터미널 2)
 ```bash
@@ -214,7 +214,7 @@ docker-compose up -d
 
 # 또는 개별 빌드 및 실행
 docker build -t meow-ai .
-docker run -p 8000:8000 -p 8001:8001 --gpus all meow-ai
+docker run -p 8000:8000 -p 8002:8002 --gpus all meow-ai
 ```
 
 ## 🧪 테스트
