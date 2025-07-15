@@ -6,12 +6,12 @@ services:
     container_name: meow-ai-server
     ports:
       - "8000:8000"  # FastAPI 서버
-      - "8001:8001"  # vLLM 서버
+      - "8002:8002"  # vLLM 서버
     environment:
       # vLLM 모델 설정
       VLLM_MODEL_PATH: "haebo/meow-clovax-v3"
       VLLM_HOST: "0.0.0.0"
-      VLLM_PORT: "8001"
+      VLLM_PORT: "8002"
       VLLM_SERVED_MODEL_NAME: "meow-clovax-v3"
       VLLM_GPU_MEMORY_UTILIZATION: "0.4"
       VLLM_MAX_MODEL_LEN: "512"
