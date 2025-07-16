@@ -90,7 +90,7 @@ def build_database():
         dog_count = service.collections["dog"].count()
         
         logger.info("이미지 데이터베이스 구축 완료!")
-        logger.info(f"통계:")
+        logger.info("통계:")
         logger.info(f"   - 고양이 이미지: {cat_count}개")
         logger.info(f"   - 강아지 이미지: {dog_count}개")
         logger.info(f"   - 총 이미지: {cat_count + dog_count}개")
