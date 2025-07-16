@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import JSONResponse
 from ai_server.schemas.image_schemas import (
     ImageSearchRequest, 
     ImageSearchResponse, 
@@ -7,7 +6,6 @@ from ai_server.schemas.image_schemas import (
 )
 from ai_server.model.image_search import get_image_search_service, ImageSearchService
 import logging
-from typing import List
 
 logger = logging.getLogger(__name__)
 
