@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from langchain.prompts import PromptTemplate
+from typing import ClassVar
 import re 
 
 class PostPromptGenerator(BaseModel):
@@ -7,8 +8,8 @@ class PostPromptGenerator(BaseModel):
     emotion: str = Field(..., description="감정 상태")
     post_type: str = Field(..., description="동물 타입")
     content: str = Field(..., description="변환할 원본 텍스트")
-    POST_TYPE_KR = {"cat": "고양이", "dog": "강아지"}
-    EMOTION_KR = {
+    POST_TYPE_KR: ClassVar[dict] = {"cat": "고양이", "dog": "강아지"}
+    EMOTION_KR: ClassVar[dict] = {
         "normal": "평범한", "happy": "기쁜", "sad": "슬픈",
         "angry": "화난", "grumpy": "까칠한", "curious": "호기심 많은"
     }
