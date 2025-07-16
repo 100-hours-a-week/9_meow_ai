@@ -3,7 +3,6 @@ vLLM 서버 설정 관리
 포스트 문장 생성을 위한 간소화된 설정
 """
 
-import os
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
