@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 from enum import Enum
-from typing import Optional
 
 # 채팅 동물 타입
 class ChatAnimalType(str, Enum):

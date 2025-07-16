@@ -5,7 +5,6 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from ai_server.router.api import api_router
 import logging
-import asyncio
 import threading
 import os
 
