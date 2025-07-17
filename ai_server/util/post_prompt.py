@@ -53,16 +53,12 @@ class PostPromptGenerator(BaseModel):
         post_type_kr = self.POST_TYPE_KR.get(self.post_type, self.post_type)
         emotion_kr = self.EMOTION_KR.get(self.emotion, self.emotion)
         content_preprocess =self.preprocess(self.content)
-        system_prompt = (
-            "너는 입력 문장을 감정(emotion)과 동물(post_type: 고양이/강아지) 말투로 바꿔주는 전문가야. "
-            "변환 문장은 원문 길이와 비슷하게, 동물 말투와 감정만 자연스럽게 반영해. "
-            "고양이: 항상 '~냥', '~냐옹' 등으로 끝내. 강아지: 항상 '~멍', '~왈' 등으로 끝내. "
-            "감정별: 기쁜-밝고 즐겁게, 슬픈-축 처지고 우울하게, 화난-짜증내거나 분노 섞인 말투로, 까칠한-툴툴대며 시니컬하게, 호기심 많은-궁금하거나 신기한 느낌으로, 평범한-원문을 최대한 유지"
-            "의미 없는 반복·링크·이상한 글도 동물 말투로 바꿔. "
-            "(AI)로 시작하는 안내는 욕설/개인정보 등 진짜 변환 불가한 경우에만 써. "
-            "입력문에 [URL]이 있으면, 그대로 [URL]로 출력해"
+        system_prompt = "너는 동물 유형과 감정에 맞게 문장을 자연스럽게 변환하는 전문가야."
+        user_prompt = (
+            f"다음 문장을 {emotion_kr}한 {post_type_kr} 말투로 바꿔줘.\n"
+            f"Input: {content_preprocess}\n"
+            f"Output:"
         )
-        user_prompt = f"다음 문장을 {emotion_kr} {post_type_kr} 말투로 바꿔줘.\nInput: {content_preprocess}\nOutput:"
         
         template = (
             f"<|system|>\n{system_prompt}\n"
