@@ -49,3 +49,12 @@ tokenizer.json
 merges.txt
 vocab.json
 *.model
+
+# 🗄️ Database Files (중요: 대용량 ChromaDB 제외)
+image_embeddings_db/
+*.db
+*.sqlite
+*.sqlite3
+chroma.db
+chroma/
+*.chroma

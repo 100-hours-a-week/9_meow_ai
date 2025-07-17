@@ -23,9 +23,9 @@ class CompletionRequest(BaseModel):
 class VLLMAsyncClient:
     """간소화된 vLLM 비동기 클라이언트"""
     
-    def __init__(self, base_url: str = "http://localhost:8001"):
+    def __init__(self, base_url: str = "http://localhost:8002"):
         self.base_url = base_url.rstrip("/")
-        self.model_name = "meow-clovax-v2" 
+        self.model_name = "meow-clovax-v3" 
         self._client: Optional[httpx.AsyncClient] = None
     
     @property

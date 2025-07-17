@@ -5,7 +5,6 @@ vLLM 서버 런처 - 간소화 버전
 import subprocess
 import time
 import logging
-import psutil
 from typing import Optional
 import requests
 

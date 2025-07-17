@@ -6,16 +6,17 @@ services:
     container_name: meow-ai-server
     ports:
       - "8000:8000"  # FastAPI 서버
-      - "8001:8001"  # vLLM 서버
+      - "8002:8002"  # vLLM 서버
     environment:
       # vLLM 모델 설정
-      VLLM_MODEL_PATH: "haebo/meow-clovax-v2"
+      VLLM_MODEL_PATH: "haebo/meow-clovax-v3"
       VLLM_HOST: "0.0.0.0"
-      VLLM_PORT: "8001"
-      VLLM_SERVED_MODEL_NAME: "meow-clovax-v2"
-      VLLM_GPU_MEMORY_UTILIZATION: "0.6"
-      VLLM_MAX_MODEL_LEN: "1536"
-      VLLM_MAX_NUM_SEQS: "12"
+      VLLM_PORT: "8002"
+      VLLM_SERVED_MODEL_NAME: "meow-clovax-v3"
+      VLLM_GPU_MEMORY_UTILIZATION: "0.4"
+      VLLM_MAX_MODEL_LEN: "512"
+      VLLM_MAX_NUM_BATCHED_TOKENS: "512"
+      VLLM_MAX_NUM_SEQS: "4"
       
       # GPU 설정
       CUDA_VISIBLE_DEVICES: "0"
@@ -23,7 +24,7 @@ services:
       NVIDIA_DRIVER_CAPABILITIES: "compute,utility"
       
       # 메모리 최적화
-      PYTORCH_CUDA_ALLOC_CONF: "max_split_size_mb:128"
+      PYTORCH_CUDA_ALLOC_CONF: "max_split_size_mb:64,garbage_collection_threshold:0.9"
       CUDA_MODULE_LOADING: "LAZY"
       
       # Python 최적화
@@ -33,7 +34,10 @@ services:
     
     # 로깅 최소화
     logging:
-      driver: "none"
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     
     deploy:
       resources:
@@ -43,12 +47,12 @@ services:
               device_ids: ["0"]
               capabilities: [gpu]
         limits:
-          memory: 32G
+          memory: 12G
     
     restart: unless-stopped
-    
+
     # 공유 메모리 최적화
-    shm_size: 2gb
+    shm_size: 512mb
     
     # 헬스체크 간소화
     healthcheck:

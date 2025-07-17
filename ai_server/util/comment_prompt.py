@@ -1,10 +1,10 @@
 from pydantic import BaseModel, Field
 from langchain.prompts import PromptTemplate
 from typing import ClassVar
-import re 
+import re
 
-class PostPromptGenerator(BaseModel):
-    """포스트용 프롬프트 생성기 클래스"""
+class CommentPromptGenerator(BaseModel):
+    """커멘트용 프롬프트 생성기 클래스"""
     emotion: str = Field(..., description="감정 상태")
     post_type: str = Field(..., description="동물 타입")
     content: str = Field(..., description="변환할 원본 텍스트")
@@ -48,7 +48,11 @@ class PostPromptGenerator(BaseModel):
     
     def create_prompt(self) -> PromptTemplate:
         """HyperCLOVA X 최적화된 간결한 프롬프트 템플릿 생성"""
-        
+
+        # emotion이 normal이 아닐 경우 에러 발생
+        if self.emotion != "normal":
+            raise ValueError("CommentPromptGenerator는 emotion='normal'만 허용합니다.")
+
         # SFT 파인튜닝과 동일한 형식으로 프롬프트 구성
         post_type_kr = self.POST_TYPE_KR.get(self.post_type, self.post_type)
         emotion_kr = self.EMOTION_KR.get(self.emotion, self.emotion)
