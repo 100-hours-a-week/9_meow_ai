@@ -35,45 +35,9 @@ def dog_converter(text):
     # '-가요' → '가왈' 변환  
     result = re.sub(r'([가-힣]+)가요(?=[!?\s.,]|$)', r'\1가왈', result)
     
+    result = re.sub(r'요\b', '왈', result)
     # '헐' → '왈' 변환
-    result = re.sub(r'(?<![가-힣])헐(?![가-힣])', '헐멍멍', result)
-    
-    # 새로운 패턴들 추가
-    # '헐' → '헐멍멍' 변환 (기존 규칙 대체)
-    result = re.sub(r'(?<![가-힣])헐(?![가-힣])', '헐멍멍', result)
-    
-    # '드립니다' → '드립니다개' 변환
-    result = re.sub(r'([가-힣]+)드립니다(?=[!?\s.,]|$)', r'\1드립니다개', result)
-    
-    # 강조 부사 변환들
-    result = re.sub(r'(\s)완전([\s가-힣])', r'\1멍전\2', result)  # 완전 → 멍전
-    result = re.sub(r'(\s)진짜([\s가-힣])', r'\1멍짜\2', result)  # 진짜 → 멍짜  
-    result = re.sub(r'(\s)정말([\s가-힣])', r'\1멍말\2', result)  # 정말 → 멍말
-    result = re.sub(r'(\s)엄청([\s가-힣])', r'\1멍청\2', result)  # 엄청 → 멍청
-    result = re.sub(r'(\s)되게([\s가-힣])', r'\1멍게\2', result)  # 되게 → 멍게
-    result = re.sub(r'(\s)너무([\s가-힣])', r'\1멍무\2', result)  # 너무 → 멍무
-    result = re.sub(r'(\s)매우([\s가-힣])', r'\1멍우\2', result)  # 매우 → 멍우
-    result = re.sub(r'(\s)많이([\s가-힣])', r'\1멍이\2', result)  # 많이 → 멍이
-    result = re.sub(r'(\s)조금([\s가-힣])', r'\1멍금\2', result)  # 조금 → 멍금
-    result = re.sub(r'(\s)좀([\s가-힣])', r'\1멍\2', result)      # 좀 → 멍
-    
-    # '좋아' → '멍좋아' 변환
-    result = re.sub(r'(?<![가-힣])좋아(?=[!?\s.,]|$)', '멍좋아', result)
-    result = re.sub(r'(?<![가-힣])좋아요(?=[!?\s.,]|$)', '멍좋아요', result)
-    
-    # '졸려' 관련 변환
-    result = re.sub(r'(?<![가-힣])졸려(?=[!?\s.,]|$)', '멍졸려', result)
-    result = re.sub(r'(?<![가-힣])졸려요(?=[!?\s.,]|$)', '멍졸려요', result)
-    
-    # '대박' → '개박' 변환 (개 특성 반영)
-    result = re.sub(r'(?<![가-힣])대박(?=[!?\s.,]|$)', '개박', result)
-    
-    # '~싶어' → '~싶개' 변환
-    result = re.sub(r'([가-힣]+)싶어(?=[!?\s.,]|$)', r'\1싶개', result)
-    result = re.sub(r'([가-힣]+)싶어요(?=[!?\s.,]|$)', r'\1싶개요', result)
-    
-    # 'ㄱㄱ' → '고고개' 변환
-    result = re.sub(r'ㄱㄱ', '고고개', result)
+    result = re.sub(r'(?<![가-힣])헐(?![가-힣])', '왈', result)
     
     # '하,' 또는 '하.' → '끼잉,' 또는 '끼잉.' 변환 (쉼표/마침표가 붙은 경우만)
     result = re.sub(r'(?<![가-힣])하([,.])', r'끼잉\1', result)
@@ -152,7 +116,7 @@ def dog_converter(text):
     
         # 새로운 자음/모음 변환 규칙들
     result = re.sub(r'ㅋㅋ+', r'\g<0>멍하하', result)  # ㅋㅋ → ㅋㅋ멍하하 (뒤에 추가)
-    result = re.sub(r'ㅎㅎ+', r'\g<0>헤헤~', result)  # ㅎㅎ → ㅎㅎ헤헤~
+    result = re.sub(r'ㅎㅎ+', r'\g<0>헤헤헥~', result)  # ㅎㅎ → ㅎㅎ헤헤~
     result = re.sub(r'ㅜ+', '끼잉..', result)  # ㅜ → 끼잉..
 
     # 9. 특별 단어/어절 처리
@@ -205,10 +169,13 @@ def dog_converter(text):
     result = re.sub(r'(\s)와!', r'\1왕왕!', result)
     result = re.sub(r'^오!', '왕왕!', result)
     result = re.sub(r'(\s)오!', r'\1왕왕!', result)
+        #미야옹 이스터에그
+    result = re.sub(r'미야옹', '✨미야옹✨', result)
+    result = re.sub(r'미야옹즈', '✨미야옹즈✨', result)
     
     # 12. 불필요한 "멍" 제거 (특별 변환 후 붙은 멍 정리)
     # 단일 패턴 뒤의 멍 제거
-    result = re.sub(r'(컹|미스코리냥|#미스코리냥|왈왈|왈|왕왕|어뗘컹|냐하|어멍|모냐멍|괜찮컹|멍이팅|녜|왕왕|댕잼|댕맛|댕맛탱|댕예|댕귀|댕좋|구와알|개|끼잉)멍', r'\1', result)
+    result = re.sub(r'(컹|미스코리냥|#미스코리냥|왈왈|왈|왕왕|어뗘컹|냐하|어멍|모냐멍|괜찮컹|멍이팅|녜|왕왕|댕잼|댕맛|댕맛탱|댕예|댕귀|댕좋|구와알|개|끼잉|미야옹|미야옹즈)멍', r'\1', result)
     
     # 연속 패턴의 마지막에만 멍 남기기 (예: 멍하멍하멍 → 멍하멍하)
     result = re.sub(r'(멍하)+멍(?![멍하])', lambda m: m.group(0)[:-1], result)  # 멍하 연속 후 마지막 멍만 제거
