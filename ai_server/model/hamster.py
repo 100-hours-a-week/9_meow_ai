@@ -35,7 +35,10 @@ def hamster_converter(text):
     result = re.sub(r'안녕(?![하히])', '햄하', result)
     result = re.sub(r'바이', '햄바', result)
     result = re.sub(r'빠이', '햄빠', result)    
-
+    
+    result = re.sub(r'(미야옹즈|미야옹)', r'✨\1✨', result)
+    result = re.sub('해보', '해보(바보)🐈', result)
+    result = re.sub('소피', '소피🎀', result)
     result = re.sub(r'(해나|혜나|헤나|다혜신|곤뇽\.|곤뇽)', r'\1🦖', result)
     # 3. "하이" → "햄하" 변환 (새로 추가)
     result = re.sub(r'하이', '햄하', result)
@@ -130,13 +133,6 @@ def hamster_converter(text):
     
     # 뒤에 한글이 오지 않는 경우에만 멍 붙이기
     result = re.sub(r'(맞아|마자|마좌|마쟈)(?![가-힣])', r'\1쮸', result)
-    
-    # 미야옹 이스터에그  
-    
-    result = re.sub(r'미야옹즈', '✨미야옹즈✨', result)
-    result = re.sub(r'미야옹', '✨미야옹✨', result)
-    result = re.sub('해보', '해보(바보)🐈', result)
-    result = re.sub('소피', '소피🎀', result)
    
 
 

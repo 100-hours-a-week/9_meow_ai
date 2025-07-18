@@ -35,6 +35,9 @@ def raccoon_converter(text):
     # 2. "안녕" → "굴하" 변환
     result = re.sub(r'안녕', '구리구리안녕구리', result)
 
+    result = re.sub(r'(미야옹즈|미야옹)', r'✨\1✨', result)
+    result = re.sub('해보', '해보(바보)🐈', result)
+    result = re.sub('소피', '소피🎀', result)
     result = re.sub(r'(해나|혜나|헤나|다혜신|곤뇽\.|곤뇽)',r'\1🦖', result)
     # 3. "하이" → "냥하" 변환 (새로 추가)
     result = re.sub(r'하이', '구리구리하이구리', result)
@@ -113,11 +116,7 @@ def raccoon_converter(text):
     result = re.sub(r'ㄱㄱ', '고고너굴!', result)
     result = re.sub(r'ㅅㄱ', '수고해라너굴~', result)
 
-    #미야옹 이스터에그
-    result = re.sub(r'미야옹즈', '✨미야옹즈✨', result)
-    result = re.sub(r'미야옹', '✨미야옹✨', result)
-    result = re.sub('해보', '해보(바보)🐈', result)
-    result = re.sub('소피', '소피🎀', result)
+
 
 
         # ㄱㅇㅇ를 임시로 보호
