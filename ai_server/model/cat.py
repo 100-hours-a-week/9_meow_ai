@@ -12,10 +12,10 @@ def cat_converter(text):
     if re.match(r'^[a-zA-Z\s\d.,!?;:\'"-]+$', result.strip()):
         # 문장 끝에 문장부호가 있는 경우 앞에 meow 추가
         if re.search(r'[.!?]$', result.strip()):
-            result = re.sub(r'([.!?])$', r' meow\1', result.strip())
+            result = re.sub(r'([.!?])$', r' meow😼\1', result.strip())
         else:
             # 문장부호가 없는 경우 그냥 meow 추가
-            result = result.strip() + ' meow'
+            result = result.strip() + ' meow😼'
         return result
     
     # 0. 작은따옴표 안의 내용 보호
@@ -36,9 +36,15 @@ def cat_converter(text):
     result = re.sub(r'안녕', '안냥', result)
 
     result = re.sub(r'(미야옹즈|미야옹)', r'✨\1✨', result)
-    result = re.sub('해보', '해보(바보)🐈', result)
+    result = re.sub(r'해보\b', '해보(바보)🐈', result)
+    result = re.sub(r'소피 바보\b', '소피는 너무 예쁘다❤️', result)
     result = re.sub('소피', '소피🎀', result)
+    result = re.sub('sophie', 'sophie🎀', result)
+    result = re.sub(r'(테리아|김형진|terea|텔)', r'\👻', result)
+    result = re.sub(r'(티미|티미우|timmy)', r'\1™️', result)
+    result = re.sub(r'(스티브|steve)', r'\1🍺', result)
     result = re.sub(r'(해나|혜나|헤나|다혜신|곤뇽\.|곤뇽)',r'\1🦖', result)
+    result = re.sub(r'(제시|제씨|졔씨|졔시)', r'\1🥝', result)
 
     # 3. "하이" → "냥하" 변환 (새로 추가)
     result = re.sub(r'하이', '냥하', result)
@@ -136,7 +142,7 @@ def cat_converter(text):
     # 새로운 자음/모음 변환 규칙들
     result = re.sub(r'ㅋㅋ+', r'\g<0>냥하하', result)  # ㅋㅋ → ㅋㅋ냥하하 (뒤에 추가)
     result = re.sub(r'ㅎㅎ+', r'\g<0>먀하하', result)  # ㅎㅎ → ㅎㅎ먀하하
-    result = re.sub(r'ㅜ+', '냐아..', result)  # ㅜ → 냐아..
+    result = re.sub(r'[ㅜㅠ]+', r'\g<0>냐아..', result)  # ㅜ → ㅜ냐아..
 
     # 9. 특별 단어/어절 처리
     # "개웃" → "냥웃" (개웃겨, 개웃기다, 개웃김 등)
@@ -187,7 +193,7 @@ def cat_converter(text):
     
     # 12. 불필요한 "냥" 제거 (특별 변환 후 붙은 냥 정리)
     # 단일 패턴 뒤의 냥 제거
-    result = re.sub(r'(해보(바보)|소피|곤뇽|냥하하|냐앙|냐앗|냐악|어떠냥|냐하|어머냥|모냥|괜찮냥|냥이팅|녜|냐아|냥잼|냥맛|냥맛탱|냥예|냥귀|냥좋|옹|먀하하|냐하하|냥이|구냐아|먀아|냥웃겨|냥웃기다|냥웃김|냥웃곀|미야옹|미야옹즈)냥', r'\1', result)
+    result = re.sub(r'(아하|우하하|하하|해보(바보)|소피|곤뇽|냥하하|냐앙|냐앗|냐악|어떠냥|냐하|어머냥|모냥|괜찮냥|냥이팅|녜|냐아|냥잼|냥맛|냥맛탱|냥예|냥귀|냥좋|옹|먀하하|냐하하|냥이|구냐아|먀아|냥웃겨|냥웃기다|냥웃김|냥웃곀|미야옹|미야옹즈)냥', r'\1', result)
     
     # 연속 패턴의 마지막에만 냥 남기기 (예: 냥하냥하냥 → 냥하냥하)
     result = re.sub(r'(냥하)+냥(?![냥하])', lambda m: m.group(0)[:-1], result)  # 냥하 연속 후 마지막 냥만 제거
@@ -201,4 +207,3 @@ def cat_converter(text):
         result = result.replace(placeholder, original)
     
     return result
-
