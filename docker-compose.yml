@@ -14,8 +14,8 @@ services:
       VLLM_PORT: "8002"
       VLLM_SERVED_MODEL_NAME: "meow-clovax-v3"
       VLLM_GPU_MEMORY_UTILIZATION: "0.4"
-      VLLM_MAX_MODEL_LEN: "512"
-      VLLM_MAX_NUM_BATCHED_TOKENS: "512"
+      VLLM_MAX_MODEL_LEN: "1024"
+      VLLM_MAX_NUM_BATCHED_TOKENS: "2048"
       VLLM_MAX_NUM_SEQS: "4"
       
       # GPU 설정
