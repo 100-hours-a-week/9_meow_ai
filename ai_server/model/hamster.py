@@ -7,14 +7,18 @@ def hamster_converter(text):
     
     result = text
        
-    # 영어 문장 체크 (알파벳, 공백, 숫자, 기본 문장부호만 포함)
-    if re.match(r'^[a-zA-Z\s\d.,!?;:\'"-]+$', result.strip()):
+    # 영어 문장 체크 (알파벳이 최소 1개 이상 포함되고, 알파벳, 공백, 숫자, 기본 문장부호만 포함)
+    if re.match(r'^[a-zA-Z\s\d.,!?;:\'"-]+$', result.strip()) and re.search(r'[a-zA-Z]', result.strip()):
         # 문장 끝에 문장부호가 있는 경우 앞에 meow 추가
         if re.search(r'[.!?]$', result.strip()):
             result = re.sub(r'([.!?])$', r' squeak🐹\1', result.strip())
         else:
             # 문장부호가 없는 경우 그냥 meow 추가
             result = result.strip() + ' squeak🐹'
+        return result
+            
+            
+            
         return result
     
     # 0. 작은따옴표 안의 내용 보호
@@ -40,12 +44,12 @@ def hamster_converter(text):
     result = re.sub(r'해보\b', '해보(바보)🐈', result)
     result = re.sub(r'소피 바보\b', '소피는 너무 예쁘다❤️', result)
     result = re.sub('소피', '소피🎀', result)
-    result = re.sub('sophie', 'sophie🎀', result)
-    result = re.sub(r'(테리아|김형진|terea|텔)', r'\👻', result)
-    result = re.sub(r'(해나|혜나|헤나|다혜신|곤뇽\.|곤뇽)', r'\1🦖', result)
+    result = re.sub(r'(테리아|김형진|텔)', r'\1👻', result)
+    result = re.sub(r'(티미|티미우|티바시)', r'\1™️', result)
+    result = re.sub(r'(스티브|스팁|슽)', r'\1🍺', result)
+    result = re.sub(r'(해나|혜나|헤나|다혜신|곤뇽\.|곤뇽)',r'\1🦖', result)
     result = re.sub(r'(제시|제씨|졔씨|졔시)', r'\1🥝', result)
-    result = re.sub(r'(티미|티미우|timmy)', r'\1™️', result)
-    result = re.sub(r'(스티브|steve)', r'\1🍺', result)
+    result = re.sub(r'샌디', r'샌디🐣', result) 
 
     # 3. "하이" → "햄하" 변환 (새로 추가)
     result = re.sub(r'하이', '햄하', result)
@@ -120,7 +124,7 @@ def hamster_converter(text):
     result = re.sub(r'ㅅㄱ','수고해라츄우~', result)
     result = re.sub(r'ㅋㅋ+', r'\g<0>햄하하', result)
     result = re.sub(r'ㅎㅎ+', r'\g<0>헤헤헷~', result)
-    result = re.sub(r'[ㅜㅠ]+', '\g<0>츄우우..', result)
+    result = re.sub(r'[ㅜㅠ]+', r'\g<0>츄우우..', result)
 
     # ㄱㅇㅇ를 임시로 보호
     result = re.sub(r'ㄱㅇㅇ', 'TEMP_GYY', result)
@@ -177,7 +181,7 @@ def hamster_converter(text):
     
     # 12. 불필요한 "찍" 제거 (특별 변환 후 붙은 찍 정리)
     # 단일 패턴 뒤의 찍 제거
-    result = re.sub(r'(아하|우하하|하하|해보(바보)|소피|곤뇽|햄하|미스코리냥|#미스코리냥|찍찍|아하쮸|왕왕|어찌|이찌|화이찡|꾸앙|끄오|뀨악|햄잼|햄맛|햄맛탱|햄예|햄귀|햄좋|쮸|어떠햄|뀨앙|쮸우우|햄바|햄빠|햄찌들|햄이팅|미야옹즈|미야옹|햄하하)찍', r'\1', result)
+    result = re.sub(r'(우우|아하|우하하|하하|해보(바보)|소피|곤뇽|햄하|미스코리냥|#미스코리냥|찍찍|아하쮸|왕왕|어찌|이찌|화이찡|꾸앙|끄오|뀨악|햄잼|햄맛|햄맛탱|햄예|햄귀|햄좋|쮸|어떠햄|뀨앙|쮸우우|햄바|햄빠|햄찌들|햄이팅|미야옹즈|미야옹|햄하하)찍', r'\1', result)
     
 
     # 13. "아아" 복원

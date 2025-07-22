@@ -8,8 +8,9 @@ def monkey_converter(text):
     
     result = text
    
-    # 영어 문장 체크 (알파벳, 공백, 숫자, 기본 문장부호만 포함)
-    if re.match(r'^[a-zA-Z\s\d.,!?;:\'"-]+$', result.strip()):
+    # 영어 문장 체크 (알파벳이 최소 1개 이상 포함되고, 알파벳, 공백, 숫자, 기본 문장부호만 포함)
+    if re.match(r'^[a-zA-Z\s\d.,!?;:\'"-]+$', result.strip()) and re.search(r'[a-zA-Z]', result.strip()):
+
         # 문장 끝에 문장부호가 있는 경우 앞에 meow 추가
         if re.search(r'[.!?]$', result.strip()):
             result = re.sub(r'([.!?])$', r' woo kki kki🐒🍌\1', result.strip())
@@ -28,6 +29,18 @@ def monkey_converter(text):
         return placeholder
     
     result = re.sub(quote_pattern, replace_quoted, result)
+
+    # 미야옹 이스터에그  
+    result = re.sub(r'(미야옹즈|미야옹)', r'✨\1✨', result)
+    result = re.sub(r'해보\b', '해보(바보)🐈', result)
+    result = re.sub(r'소피 바보\b', '소피는 너무 예쁘다❤️', result)
+    result = re.sub('소피', '소피🎀', result)
+    result = re.sub(r'(테리아|김형진|텔)', r'\1👻', result)
+    result = re.sub(r'(티미|티미우|티바시)', r'\1™️', result)
+    result = re.sub(r'(스티브|스팁|슽)', r'\1🍺', result)
+    result = re.sub(r'(해나|혜나|헤나|다혜신|곤뇽\.|곤뇽)',r'\1🦖', result)
+    result = re.sub(r'(제시|제씨|졔씨|졔시)', r'\1🥝', result)
+    result = re.sub(r'샌디', r'샌디🐣', result)
     
     # 1. "아아" 보호 (아이스아메리카노, 의성어)
     result = re.sub(r'아아', 'TEMP_AA', result)
@@ -90,17 +103,6 @@ def monkey_converter(text):
     result = re.sub(r'멍/b', '끼끼', result)
     result = re.sub(r'군/b', '군끼끼', result)
     
-    # 미야옹 이스터에그  
-    result = re.sub(r'(미야옹즈|미야옹)', r'✨\1✨', result)
-    result = re.sub(r'해보\b', '해보(바보)🐈', result)
-    result = re.sub(r'소피 바보\b', '소피는 너무 예쁘다❤️', result)
-    result = re.sub('소피', '소피🎀', result)
-    result = re.sub('sophie', 'sophie🎀', result)
-    result = re.sub(r'(테리아|김형진|terea|텔)', r'\👻', result)
-    result = re.sub(r'(제시|제씨|졔씨|졔시)', r'\1🥝', result)
-    result = re.sub(r'(해나|혜나|헤나|다혜신|곤뇽\.|곤뇽)',r'\1🦖', result)
-    result = re.sub(r'(티미|티미우|timmy)', r'\1™️', result)
-    result = re.sub(r'(스티브|steve)', r'\1🍺', result)
 
 
     # 5. 대답 변환: "응" → "뭉", "네" → "뭉", "예" → "몡" (제한적)
@@ -140,7 +142,7 @@ def monkey_converter(text):
 
     # 12. 불필요한 "몽" 제거 (특별 변환 후 붙은 몽 정리)
     # 단일 패턴 뒤의 몽 제거
-    result = re.sub(r'(아하|우하하|하하|해보(바보)|소피|곤뇽|끼|뭉|몡|몽|몽이팅|몽하|몽바|몽빠|몽잼|몽맛|몽맛탱|몽예|몽귀|몽좋|우!아!아|미야옹즈|미야옹)끼끼', r'\1', result)
+    result = re.sub(r'(우우|아하|우하하|하하|해보(바보)|소피|곤뇽|끼|뭉|몡|몽|몽이팅|몽하|몽바|몽빠|몽잼|몽맛|몽맛탱|몽예|몽귀|몽좋|우!아!아|미야옹즈|미야옹)끼끼', r'\1', result)
     
     # ㅋ 개수별 변환 (긴 패턴부터 먼저 처리)
     result = re.sub(r'ㅋ{26,}', 'ㄲㄲㄲ크킄킄ㄲㄲ키끼끼우끼킼ㄲ캭캭우컄ㄲㄲㄲㄲㄲㄲㄲㄲ캬', result)
@@ -150,7 +152,7 @@ def monkey_converter(text):
     result = re.sub(r'ㅋ{3}', '우키킼ㄲ', result)
     result = re.sub(r'ㅋ{2}', '우키키', result)
     result = re.sub(r'ㅋ{1}', '우낔', result)
-    result = re.sub(r'[ㅜㅠ]', r'\g<0>몽..', result)
+    result = re.sub(r'[ㅜㅠ]+', r'\g<0>몽..', result)
 
     
     result = re.sub(r'TEMP_AA', '아아', result)
