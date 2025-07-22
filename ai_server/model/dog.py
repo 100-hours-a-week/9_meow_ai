@@ -7,9 +7,21 @@ def dog_converter(text):
         return text
     
     result = text
-       
-    # 영어 문장 체크 (알파벳, 공백, 숫자, 기본 문장부호만 포함)
-    if re.match(r'^[a-zA-Z\s\d.,!?;:\'"-]+$', result.strip()):
+
+    result = re.sub(r'(미야옹즈|미야옹)', r'✨\1✨', result)
+    result = re.sub(r'해보\b', '해보(바보)🐈', result)
+    result = re.sub(r'소피 바보\b', '소피는 너무 예쁘다❤️', result)
+    result = re.sub('소피', '소피🎀', result)
+    result = re.sub(r'(테리아|김형진|텔)', r'\1👻', result)
+    result = re.sub(r'(티미|티미우|티바시)', r'\1™️', result)
+    result = re.sub(r'(스티브|스팁|슽)', r'\1🍺', result)
+    result = re.sub(r'(해나|혜나|헤나|다혜신|곤뇽\.|곤뇽)',r'\1🦖', result)
+    result = re.sub(r'(제시|제씨|졔씨|졔시)', r'\1🥝', result)
+    result = re.sub(r'샌디', r'샌디🐣', result)
+
+    # 영어 문장 체크 (알파벳이 최소 1개 이상 포함되고, 알파벳, 공백, 숫자, 기본 문장부호만 포함)
+    if re.match(r'^[a-zA-Z\s\d.,!?;:\'"-]+$', result.strip()) and re.search(r'[a-zA-Z]', result.strip()):
+
         # 문장 끝에 문장부호가 있는 경우 앞에 meow 추가
         if re.search(r'[.!?]$', result.strip()):
             result = re.sub(r'([.!?])$', r' grrrrr🐾\1', result.strip())
@@ -17,6 +29,7 @@ def dog_converter(text):
             # 문장부호가 없는 경우 그냥 meow 추가
             result = result.strip() + ' grrrrr🐾'
         return result
+    
     # 0. 작은따옴표 안의 내용 보호
     quoted_parts = {}
     quote_pattern = r"'([^']*?)'"
@@ -40,16 +53,6 @@ def dog_converter(text):
     result = re.sub(r'(강아지|개)', '강아지🐶', result) 
     result = re.sub(r'(멍멍이|멍뭉이|멍이)', r'\1🐶', result)  # "멍멍이" → "멍멍이🐕"
 
-    result = re.sub(r'(미야옹즈|미야옹)', r'✨\1✨', result)
-    result = re.sub(r'해보\b', '해보(바보)🐈', result)
-    result = re.sub(r'소피 바보\b', '소피는 너무 예쁘다❤️', result)
-    result = re.sub('소피', '소피🎀', result)
-    result = re.sub('sophie', 'sophie🎀', result)
-    result = re.sub(r'(테리아|김형진|terea|텔)', r'\👻', result)
-    result = re.sub(r'(해나|혜나|헤나|다혜신|곤뇽\.|곤뇽|hannah)',r'\1🦖', result)
-    result = re.sub(r'(제시|제씨|졔씨|졔시|jessie)', r'\1🥝', result)
-    result = re.sub(r'(티미|티미우|timmy)', r'\1™️', result)
-    result = re.sub(r'(스티브|steve)', r'\1🍺', result)
 
     # 4. 새로운 변환 규칙들 추가
     # '-나요' → '멍' 변환
@@ -69,16 +72,16 @@ def dog_converter(text):
     result = re.sub(r'([가-힣]+)냐(?=[!?\s.,]|$)', r'\1냐개', result)
     
     # '-지죠' → '-지냐왈' 변환
-    result = re.sub(r'([가-힣]+)지죠(?=[!?\s.,]|$)', r'\1지냐왈', result)
+    #result = re.sub(r'([가-힣]+)지죠(?=[!?\s.,]|$)', r'\1지냐왈', result)
     
     # '-자나' → '자냐왈' 변환
-    result = re.sub(r'([가-힣]+)자나(?=[!?\s.,]|$)', r'\1자냐왈', result)
+    result = re.sub(r'([가-힣]+)(자나|잖아|쟈나)(?=[!?\s.,]|$)', r'\1자냐왈', result)
     
-    # '-임' → '-이다개' 변환
-    result = re.sub(r'([가-힣]+)임(?=[!?\s.,]|$)', r'\1이다개', result)
+    # '-임' → '-이다개' 변환 소피임 소피이다개 미야옹임 미야옹이다개
+    #result = re.sub(r'([가-힣]+)임(?=[!?\s.,]|$)', r'\1이다개', result)
     
     # '-잖아' → '-잖냐왈' 변환
-    result = re.sub(r'([가-힣]+)잖아(?=[!?\s.,~]|$)', r'\1잖냐왈', result)
+    #result = re.sub(r'([가-힣]+)잖아(?=[!?\s.,~]|$)', r'\1잖냐왈', result)
     
     # 과거형 어미 변환들
     # '-겁니다' → '-거다개' 변환 (긴 패턴 먼저)
@@ -195,7 +198,7 @@ def dog_converter(text):
 
     # 12. 불필요한 "멍" 제거 (특별 변환 후 붙은 멍 정리)
     # 단일 패턴 뒤의 멍 제거
-    result = re.sub(r'(깨갱|아하|우하하|하하|소피|해보(바보)|곤뇽|멍하하|컹|미스코리냥|#미스코리냥|왈왈|왈|왕왕|어뗘컹|냐하|어멍|모냐멍|괜찮컹|멍이팅|녜|왕왕|댕잼|댕맛|댕맛탱|댕예|댕귀|댕좋|와알|개|끼잉|미야옹|미야옹즈)멍', r'\1', result)
+    result = re.sub(r'(우우|깨갱|아하|우하하|하하|소피|해보(바보)|곤뇽|멍하하|컹|미스코리냥|#미스코리냥|왈왈|왈|왕왕|어뗘컹|냐하|어멍|모냐멍|괜찮컹|멍이팅|녜|왕왕|댕잼|댕맛|댕맛탱|댕예|댕귀|댕좋|와알|개|끼잉|미야옹|미야옹즈)멍', r'\1', result)
     
     # 연속 패턴의 마지막에만 멍 남기기 (예: 멍하멍하멍 → 멍하멍하)
     result = re.sub(r'(멍하)+멍(?![멍하])', lambda m: m.group(0)[:-1], result)  # 멍하 연속 후 마지막 멍만 제거
