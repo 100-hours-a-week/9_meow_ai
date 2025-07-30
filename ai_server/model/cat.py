@@ -7,6 +7,17 @@ def cat_converter(text):
     
     result = text
     
+       
+    # 영어 문장 체크 (알파벳이 최소 1개 이상 포함되고, 알파벳, 공백, 숫자, 기본 문장부호만 포함)
+    if re.match(r'^[a-zA-Z\s\d.,!?;:\'"-]+$', result.strip()) and re.search(r'[a-zA-Z]', result.strip()):
+        # 문장 끝에 문장부호가 있는 경우 앞에 meow 추가
+        if re.search(r'[.!?]$', result.strip()):
+            result = re.sub(r'([.!?])$', r' meow😼\1', result.strip())
+        else:
+            # 문장부호가 없는 경우 그냥 meow 추가
+            result = result.strip() + ' meow😼'
+        return result
+    
     # 0. 작은따옴표 안의 내용 보호
     quoted_parts = {}
     quote_pattern = r"'([^']*?)'"
@@ -23,7 +34,18 @@ def cat_converter(text):
     
     # 2. "안녕" → "안냥" 변환
     result = re.sub(r'안녕', '안냥', result)
-    
+
+    result = re.sub(r'(미야옹즈|미야옹)', r'✨\1✨', result)
+    result = re.sub(r'해보\b', '해보(바보)🐈', result)
+    result = re.sub(r'소피 바보\b', '소피는 너무 예쁘다❤️', result)
+    result = re.sub('소피', '소피🎀', result)
+    result = re.sub(r'(테리아|김형진|텔)', r'\1👻', result)
+    result = re.sub(r'(티미|티미우|티바시)', r'\1™️', result)
+    result = re.sub(r'(스티브|스팁|슽)', r'\1🍺', result)
+    result = re.sub(r'(해나|혜나|헤나|다혜신|곤뇽\.|곤뇽)',r'\1🦖', result)
+    result = re.sub(r'(제시|제씨|졔씨|졔시)', r'\1🥝', result)
+    result = re.sub(r'샌디', r'샌디🐣', result)
+
     # 3. "하이" → "냥하" 변환 (새로 추가)
     result = re.sub(r'하이', '냥하', result)
 
@@ -31,62 +53,29 @@ def cat_converter(text):
     # '-나요' → '냥' 변환
     result = re.sub(r'([가-힣]+)나요(?=[!?\s.,]|$)', r'\1냥', result)
     
-    # '-가요' → '가냥' 변환  
-    result = re.sub(r'([가-힣]+)가요(?=[!?\s.,]|$)', r'\1가냥', result)
+    # '-가요' → '가냥' 변환  인가요 인가냥 나가요 나가냥?? -> 명령문,청유문 의미 왜곡 
+    #result = re.sub(r'([가-힣]+)가요(?=[!?\s.,]|$)', r'\1가냥', result)
 
     # '헐' → '먀아' 변환
-    result = re.sub(r'(?<![가-힣])헐(?![가-힣])', '먀아', result)
-    
-    # '드립니다' → '드립니다냥' 변환
-    result = re.sub(r'([가-힣]+)드립니다(?=[!?\s.,]|$)', r'\1드립니다냥', result)
-    
-    # 강조 부사 변환들
-    result = re.sub(r'(\s)완전([\s가-힣])', r'\1냥전\2', result)  # 완전 → 냥전
-    result = re.sub(r'(\s)진짜([\s가-힣])', r'\1냥짜\2', result)  # 진짜 → 냥짜  
-    result = re.sub(r'(\s)정말([\s가-힣])', r'\1냥말\2', result)  # 정말 → 냥말
-    result = re.sub(r'(\s)엄청([\s가-힣])', r'\1냥청\2', result)  # 엄청 → 냥청
-    result = re.sub(r'(\s)되게([\s가-힣])', r'\1냥게\2', result)  # 되게 → 냥게
-    result = re.sub(r'(\s)너무([\s가-힣])', r'\1냥무\2', result)  # 너무 → 냥무
-    result = re.sub(r'(\s)매우([\s가-힣])', r'\1냥우\2', result)  # 매우 → 냥우
-    result = re.sub(r'(\s)많이([\s가-힣])', r'\1냥이\2', result)  # 많이 → 냥이
-    result = re.sub(r'(\s)조금([\s가-힣])', r'\1냥금\2', result)  # 조금 → 냥금
-    result = re.sub(r'(\s)좀([\s가-힣])', r'\1냥\2', result)      # 좀 → 냥
-    
-    # '좋아' → '냥좋아' 변환
-    result = re.sub(r'(?<![가-힣])좋아(?=[!?\s.,]|$)', '냥좋아', result)
-    result = re.sub(r'(?<![가-힣])좋아요(?=[!?\s.,]|$)', '냥좋아요', result)
-    
-    # '졸려' 관련 변환
-    result = re.sub(r'(?<![가-힣])졸려(?=[!?\s.,]|$)', '냥졸려', result)
-    result = re.sub(r'(?<![가-힣])졸려요(?=[!?\s.,]|$)', '냥졸려요', result)
-    
-    # '대박' → '냥대박' 변환
-    result = re.sub(r'(?<![가-힣])대박(?=[!?\s.,]|$)', '냥대박', result)
-    
-    # '~싶어' → '~싶냥' 변환
-    result = re.sub(r'([가-힣]+)싶어(?=[!?\s.,]|$)', r'\1싶냥', result)
-    result = re.sub(r'([가-힣]+)싶어요(?=[!?\s.,]|$)', r'\1싶냥요', result)
-    
-    # 'ㄱㄱ' → '고고냥' 변환
-    result = re.sub(r'ㄱㄱ', '고고냥', result)
+    result = re.sub(r'(?<![가-힣])헐(?![가-힣])', '먘', result)
     
     # '하,' 또는 '하.' → '냐아,' 또는 '냐아.' 변환 (쉼표/마침표가 붙은 경우만)
     result = re.sub(r'(?<![가-힣])하([,.])', r'냐아\1', result)
     
-    # '-지죠' → '-지냐옹' 변환
-    result = re.sub(r'([가-힣]+)지죠(?=[!?\s.,]|$)', r'\1지냐옹', result)
+    # '-지죠' → '-지냐옹' 변환 -> 오지죠-오지냐옹/간지죠-간지냐옹 -> 어색한디
+    #result = re.sub(r'([가-힣]+)지죠(?=[!?\s.,]|$)', r'\1지냐옹', result)
     
-    # '-자나' → '자냐아' 변환
-    result = re.sub(r'([가-힣]+)자나(?=[!?\s.,]|$)', r'\1자냐아', result)
+    # '-자나' → '자냐아' 변환 
+    result = re.sub(r'([가-힣]+)(자나|잖아)(?=[!?\s.,]|$)', r'\1자냐아', result)
     
-    # '-임' → '-이다냥' 변환
-    result = re.sub(r'([가-힣]+)임(?=[!?\s.,]|$)', r'\1이다냥', result)
+    # '-임' → '-이다냥' 변환 -> 앞에 받침여부에 따라 달라야 해서 보류. 미야옹이다냥, 미야옹즈다냥
+    #result = re.sub(r'([가-힣]+)임(?=[!?\s.,]|$)', r'\1이다냥', result)
     
-    # '-잖아' → '-잖냐옹' 변환
+    # '-잖아' → '-잖냐옹' 변환 예쁘잖아 -> 예쁘잖냐옹/ 귀엽잖아 -> 귀엽잖냐옹/ 없잖아 -> 없잖냐옹(이건 거의 안쓰이니까 놔둘게요)
     result = re.sub(r'([가-힣]+)잖아(?=[!?\s.,~]|$)', r'\1잖냐옹', result)
     
     # 과거형 어미 변환들
-    # '-겁니다' → '-거다냥' 변환 (긴 패턴 먼저)
+    # '-겁니다' → '-거다냥' 변환 (긴 패턴 먼저) 
     result = re.sub(r'([가-힣]+)겁니다(?=[!?\s.,]|$)', r'\1거다냥', result)
     
     # '-군' → '-구냐아' 변환
@@ -95,6 +84,11 @@ def cat_converter(text):
     # 특별 형용사 변환
     # '귀엽다' → '귀엽다냐하' 변환
     result = re.sub(r'귀엽다(?=[!?\s.,]|$)', '귀엽다냐하', result)
+
+    # 고양이
+    result = re.sub(r'(고양이|냥냥이|냥이|고냥이)', '냥이🐱', result)  # "고양이" → "냥이🐱"
+    result = re.sub(r'해냥이', '해냥이🐈', result) 
+
 
     # 5. 대답 변환: "응" → "냥", "네" → "냥", "예" → "녜" (제한적)
     result = re.sub(r'^응(?=[!?\s.,]|$)', '냥', result)
@@ -129,7 +123,7 @@ def cat_converter(text):
     
     # 8. 자음 조합 변환 (긴 패턴부터 먼저 처리)
     result = re.sub(r'ㅎㅇㅌ', '냥이팅', result)  # ㅎㅇ보다 먼저 처리
-    result = re.sub(r'ㅎㅇ', '하이다냥~', result)  # ㅎㅇ → 하이다냥~ 변환
+    result = re.sub(r'ㅎㅇ', '냥하', result)
     result = re.sub(r'ㅇㅁ', '어머냥', result)
     result = re.sub(r'ㅁㅇ', '모냥', result)
     result = re.sub(r'ㄱㅊ', '괜찮냥', result)  # ㄱㅊ → 괜찮냥
@@ -142,12 +136,13 @@ def cat_converter(text):
     
     result = re.sub(r'ㅇㄸ', '어떠냥', result)
     result = re.sub(r'(?<![가-힣])아하(?![가-힣])', '냐하', result)  # 앞뒤에 한글이 없는 독립된 "아하"만
-    
-    
+
+
+
     # 새로운 자음/모음 변환 규칙들
     result = re.sub(r'ㅋㅋ+', r'\g<0>냥하하', result)  # ㅋㅋ → ㅋㅋ냥하하 (뒤에 추가)
     result = re.sub(r'ㅎㅎ+', r'\g<0>먀하하', result)  # ㅎㅎ → ㅎㅎ먀하하
-    result = re.sub(r'ㅜ+', '냐아..', result)  # ㅜ → 냐아..
+    result = re.sub(r'[ㅜㅠ]+', r'\g<0>냐아..', result)  # ㅜ → ㅜ냐아..
 
     # 9. 특별 단어/어절 처리
     # "개웃" → "냥웃" (개웃겨, 개웃기다, 개웃김 등)
@@ -161,6 +156,8 @@ def cat_converter(text):
     
     # 공백 뒤 강조 표현: "개이쁘", "개귀엽", "개귀여" → "냥이쁘", "냥귀엽", "냥귀여" (강조 용법만)
     result = re.sub(r'(\s)개(이쁘|귀엽|귀여)', r'\1냥\2', result)  # 공백 뒤에만
+    result = re.sub(r'(\s)개(꿀|이득)', r'\1캣\2', result)  # 공백 뒤에만
+
     
     # "존" 강조 표현 변환 (공백 뒤에만)
     result = re.sub(r'(\s)존(잼|맛|맛탱|예|귀|좋)', r'\1냥\2', result)  # 공백 뒤에만
@@ -169,7 +166,7 @@ def cat_converter(text):
     result = re.sub(r'(맞아|마자|마좌|마쟈)(?![가-힣])', r'\1냥', result)
 
     # 다옹 냐옹 
-    result = re.sub(r'([가-힣])(다|나|냐)\b', r'\1\2옹', result)
+    result = re.sub(r'([가-힣])(?<!해)(?<!헤)(?<!혜)(다|나|냐)\b', r'\1\2옹', result)
     result = re.sub(r'([가-힣])요\b', r'\1야옹', result)
     # 10. 문장 끝에 "냥" 추가 (한국어가 포함된 경우만)
     if re.search(r'[가-힣]', result):
@@ -198,7 +195,7 @@ def cat_converter(text):
     
     # 12. 불필요한 "냥" 제거 (특별 변환 후 붙은 냥 정리)
     # 단일 패턴 뒤의 냥 제거
-    result = re.sub(r'(냐앙|냐앗|냐악|어떠냥|냐하|어머냥|모냥|괜찮냥|냥이팅|녜|냐아|냥잼|냥맛|냥맛탱|냥예|냥귀|냥좋|옹|먀하하|냐하하|냥이|구냐아|먀아|냥웃겨|냥웃기다|냥웃김|냥웃곀)냥', r'\1', result)
+    result = re.sub(r'(우우|먘|아하|우하하|하하|해보(바보)|소피|곤뇽|냥하하|냐앙|냐앗|냐악|어떠냥|냐하|어머냥|모냥|괜찮냥|냥이팅|녜|냐아|냥잼|냥맛|냥맛탱|냥예|냥귀|냥좋|옹|먀하하|냐하하|냥이|구냐아|먀아|냥웃겨|냥웃기다|냥웃김|냥웃곀|미야옹|미야옹즈)냥', r'\1', result)
     
     # 연속 패턴의 마지막에만 냥 남기기 (예: 냥하냥하냥 → 냥하냥하)
     result = re.sub(r'(냥하)+냥(?![냥하])', lambda m: m.group(0)[:-1], result)  # 냥하 연속 후 마지막 냥만 제거
@@ -212,4 +209,3 @@ def cat_converter(text):
         result = result.replace(placeholder, original)
     
     return result
-

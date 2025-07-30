@@ -64,7 +64,8 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         --port "${VLLM_PORT:-8001}" \
         --served-model-name "${VLLM_SERVED_MODEL_NAME:-meow-clovax-v3}" \
         --gpu-memory-utilization "${VLLM_GPU_MEMORY_UTILIZATION:-0.4}" \
-        --max-model-len "${VLLM_MAX_MODEL_LEN:-512}" \
+        --max-model-len "${VLLM_MAX_MODEL_LEN:-1024}" \
+        --max-num-batched-tokens "${VLLM_MAX_NUM_BATCHED_TOKENS:-2048}" \
         --max-num-seqs "${VLLM_MAX_NUM_SEQS:-4}" &
     
     # PID 저장
